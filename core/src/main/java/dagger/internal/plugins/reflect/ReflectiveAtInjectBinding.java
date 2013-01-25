@@ -15,6 +15,7 @@
  */
 package dagger.internal.plugins.reflect;
 
+import dagger.Assisted;
 import dagger.internal.Binding;
 import dagger.internal.Keys;
 import dagger.internal.Linker;
@@ -199,7 +200,7 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
         }
         field.setAccessible(true);
         String key = Keys.get(field.getGenericType(), field.getAnnotations(), field);
-        if (Keys.isAssisted(key)) {
+        if (field.isAnnotationPresent(Assisted.class)) {
           assistedFields.add(field);
           assistedKeys.add(key);
         } else {
@@ -245,7 +246,13 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
         Annotation[][] annotations = injectedConstructor.getParameterAnnotations();
         for (int p = 0; p < types.length; p++) {
           String key = Keys.get(types[p], annotations[p], injectedConstructor);
-          if (Keys.isAssisted(key)) {
+          boolean isAssisted = false;
+          for (Annotation annotation : annotations[p]) {
+            if (Assisted.class.equals(annotation.annotationType())) {
+              isAssisted = true;
+            }
+          }
+          if (isAssisted) {
             assistedKeys.add(key);
             assistedParamIndexes.add(p);
           } else {

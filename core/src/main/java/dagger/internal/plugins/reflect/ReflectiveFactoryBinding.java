@@ -46,7 +46,7 @@ public class ReflectiveFactoryBinding<T> extends Binding<T> {
   @Override
   public T get() {
     return (T) Proxy.newProxyInstance(ReflectiveFactoryBinding.class.getClassLoader(),
-        new Class[]{factory}, new FactoryInvocationHandler());
+        new Class<?>[]{factory}, new FactoryInvocationHandler());
   }
 
   @Override
@@ -79,9 +79,6 @@ public class ReflectiveFactoryBinding<T> extends Binding<T> {
 
       for (int i = 0; i < types.length; i++) {
         String key = Keys.get(types[i], annotations[i], method + " parameter " + i);
-        if (!Keys.isAssisted(key)) {
-          key = Keys.getWithDefaultAssisted(types[i]);
-        }
 
         int index = assistedKeys.indexOf(key);
         if (index == -1) {

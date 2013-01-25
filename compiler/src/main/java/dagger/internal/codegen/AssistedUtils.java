@@ -122,11 +122,7 @@ public final class AssistedUtils {
 
       List<Integer> transposition = new ArrayList<Integer>();
       for (VariableElement param : methodParameters) {
-        String paramKey = GeneratorKeys.get(param);
-        if (!GeneratorKeys.isAssisted(paramKey)) {
-          paramKey = GeneratorKeys.getWithDefaultAssisted(param.asType());
-        }
-        int index = keys.indexOf(paramKey);
+        int index = keys.indexOf(GeneratorKeys.get(param));
         if (index == -1) {
           continue findMethod;
         }

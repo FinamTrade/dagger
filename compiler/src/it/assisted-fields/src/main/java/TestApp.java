@@ -4,6 +4,7 @@ import dagger.Module;
 import dagger.ObjectGraph;
 import dagger.Provides;
 
+import javax.inject.Named;
 import javax.inject.Inject;
 import java.lang.Override;
 import java.lang.Runnable;
@@ -32,7 +33,7 @@ public class TestApp implements Runnable {
 
   interface BFactory {
 
-    B newB(String name, @Assisted("a") String a, @Assisted("b") String b);
+    B newB(String name, @Named("a") String a, @Named("b") String b);
   }
 
   @Module(entryPoints = A.class)
@@ -46,13 +47,14 @@ public class TestApp implements Runnable {
 
   static class BImpl2 extends BImpl {
     @Inject
-    @Assisted("a")
+    @Assisted
+    @Named("a")
     String a;
 
     String b;
 
     @Inject
-    BImpl2(@Assisted("b") String b) {
+    BImpl2(@Assisted @Named("b") String b) {
       this.b = b;
     }
 
