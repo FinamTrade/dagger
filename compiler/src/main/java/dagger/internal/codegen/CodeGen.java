@@ -94,6 +94,13 @@ final class CodeGen {
     return result.toString();
   }
 
+  /** Returns a string for {@code type}. */
+  public static String typeToStringAsIs(TypeMirror type) {
+    StringBuilder result = new StringBuilder();
+    typeToString(type, result, '.', false);
+    return result.toString();
+  }
+
   /** Returns a string for the raw type of {@code type}. Primitive types are always boxed. */
   public static String rawTypeToString(TypeMirror type, char innerClassSeparator) {
     if (!(type instanceof DeclaredType)) {
@@ -116,6 +123,19 @@ final class CodeGen {
    */
   public static void typeToString(final TypeMirror type, final StringBuilder result,
       final char innerClassSeparator) {
+    typeToString(type, result, innerClassSeparator, true);
+  }
+
+  /**
+   * Appends a string for {@code type} to {@code result}.
+   *
+   * @param innerClassSeparator either '.' or '$', which will appear in a
+   *     class name like "java.lang.Map.Entry" or "java.lang.Map$Entry".
+   *     Use '.' for references to existing types in code. Use '$' to define new
+   *     class names and for strings that will be used by runtime reflection.
+   */
+  public static void typeToString(final TypeMirror type, final StringBuilder result,
+      final char innerClassSeparator, final boolean boxPrimitiveTypes) {
     type.accept(new SimpleTypeVisitor6<Void, Void>() {
       @Override public Void visitDeclared(DeclaredType declaredType, Void v) {
         TypeElement typeElement = (TypeElement) declaredType.asElement();
@@ -127,18 +147,22 @@ final class CodeGen {
             if (i != 0) {
               result.append(", ");
             }
-            typeToString(typeArguments.get(i), result, innerClassSeparator);
+            typeToString(typeArguments.get(i), result, innerClassSeparator, boxPrimitiveTypes);
           }
           result.append(">");
         }
         return null;
       }
       @Override public Void visitPrimitive(PrimitiveType primitiveType, Void v) {
-        result.append(box((PrimitiveType) type).getName());
+        if (boxPrimitiveTypes) {
+          result.append(box((PrimitiveType) type).getName());
+        } else {
+          result.append(type.toString());
+        }
         return null;
       }
       @Override public Void visitArray(ArrayType arrayType, Void v) {
-        typeToString(arrayType.getComponentType(), result, innerClassSeparator);
+        typeToString(arrayType.getComponentType(), result, innerClassSeparator, boxPrimitiveTypes);
         result.append("[]");
         return null;
       }

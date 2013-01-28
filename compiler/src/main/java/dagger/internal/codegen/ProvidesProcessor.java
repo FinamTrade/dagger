@@ -425,7 +425,7 @@ public final class ProvidesProcessor extends AbstractProcessor {
       List<? extends VariableElement> factoryMethodParams =
           factoryMethod.getMethod().getParameters();
       for (Element parameter : factoryMethodParams)  {
-        params.add(CodeGen.typeToString(parameter.asType()));
+        params.add(CodeGen.typeToStringAsIs(parameter.asType()));
         params.add(assistedParameterName(parameter));
       }
 
