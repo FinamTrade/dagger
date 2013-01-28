@@ -435,16 +435,15 @@ public final class ProvidesProcessor extends AbstractProcessor {
           factoryMethod.getMethod().getSimpleName().toString(), PUBLIC,
           params.toArray(new String[params.size()]));
       StringBuilder statement = new StringBuilder();
-      statement.append("return ");
-      statement.append(parameterName(parameters.get(0)));
-      statement.append(".get(new Object[] { ");
+      statement.append(String.format("return module.%s(%s.get(new Object[] { ",
+          methodName, parameterName(parameters.get(0))));
       boolean first = true;
       for (Integer index : factoryMethod.getTransposition()) {
         if (!first) statement.append(", ");
         else first = false;
         statement.append(assistedParameterName(factoryMethodParams.get(index)));
       }
-      statement.append(" })");
+      statement.append(" }))");
       writer.emitStatement(statement.toString());
       writer.endMethod();
 
