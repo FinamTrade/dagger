@@ -231,12 +231,9 @@ public final class InjectProcessor extends AbstractProcessor {
 
     if (constructor != null) {
       for (VariableElement parameter : constructor.getParameters()) {
-        writer.emitField(JavaWriter.type(Binding.class,
-            CodeGen.typeToString(parameter.asType())),
-            parameterName(disambiguateFields, parameter), PRIVATE);
         if (parameter.getAnnotation(Assisted.class) == null) {
           TypeMirror parameterType = parameter.asType();
-          writer.emitField(CodeGen.parameterizedType(Binding.class,
+          writer.emitField(JavaWriter.type(Binding.class,
               CodeGen.typeToString(parameterType)),
               parameterName(disambiguateFields, parameter), PRIVATE);
         }
@@ -244,11 +241,8 @@ public final class InjectProcessor extends AbstractProcessor {
     }
 
     for (Element field : fields) {
-      writer.emitField(JavaWriter.type(Binding.class,
-          CodeGen.typeToString(field.asType())),
-          fieldName(disambiguateFields, field), PRIVATE);
       if (field.getAnnotation(Assisted.class) == null) {
-        writer.emitField(CodeGen.parameterizedType(Binding.class,
+        writer.emitField(JavaWriter.type(Binding.class,
             CodeGen.typeToString(field.asType())),
             fieldName(disambiguateFields, field), PRIVATE);
       }
@@ -300,12 +294,10 @@ public final class InjectProcessor extends AbstractProcessor {
     if (constructor != null) {
       for (VariableElement parameter : constructor.getParameters()) {
         if (parameter.getAnnotation(Assisted.class) == null) {
-          TypeMirror parameterType = parameter.asType();
           writer.emitStatement("%s = (%s) linker.requestBinding(%s, %s.class)",
               parameterName(disambiguateFields, parameter),
               writer.compressType(JavaWriter.type(Binding.class,
                   CodeGen.typeToString(parameter.asType()))),
-              CodeGen.parameterizedType(Binding.class, CodeGen.typeToString(parameterType)),
               JavaWriter.stringLiteral(GeneratorKeys.get(parameter)),
               strippedTypeName);
         }
@@ -313,24 +305,13 @@ public final class InjectProcessor extends AbstractProcessor {
     }
     for (Element field : fields) {
       if (field.getAnnotation(Assisted.class) == null) {
-        TypeMirror fieldType = field.asType();
         writer.emitStatement("%s = (%s) linker.requestBinding(%s, %s.class)",
             fieldName(disambiguateFields, field),
             writer.compressType(JavaWriter.type(Binding.class,
                 CodeGen.typeToString(field.asType()))),
-            CodeGen.parameterizedType(Binding.class, CodeGen.typeToString(fieldType)),
             JavaWriter.stringLiteral(GeneratorKeys.get((VariableElement) field)),
             strippedTypeName);
       }
-      if (supertype != null) {
-        writer.emitStatement("%s = (%s) linker.requestBinding(%s, %s.class, false)",
-            "supertype",
-            writer.compressType(JavaWriter.type(Binding.class,
-                CodeGen.rawTypeToString(supertype, '.'))),
-            JavaWriter.stringLiteral(GeneratorKeys.rawMembersKey(supertype)),
-            strippedTypeName);
-      }
-      writer.endMethod();
     }
     if (supertype != null) {
       writer.emitStatement("%s = (%s) linker.requestBinding(%s, %s.class, false)",
@@ -341,15 +322,6 @@ public final class InjectProcessor extends AbstractProcessor {
     }
     writer.endMethod();
 
-      writer.emitEmptyLine();
-      writer.emitJavadoc(ProcessorJavadocs.GET_DEPENDENCIES_METHOD);
-      writer.emitAnnotation(Override.class);
-      String setOfBindings = JavaWriter.type(Set.class, "Binding<?>");
-      writer.beginMethod("void", "getDependencies", PUBLIC, setOfBindings, "getBindings",
-          setOfBindings, "injectMembersBindings");
-      if (constructor != null) {
-        for (Element parameter : constructor.getParameters()) {
-          writer.emitStatement("getBindings.add(%s)", parameterName(disambiguateFields, parameter));
     writer.emitEmptyLine();
     writer.emitJavadoc(ProcessorJavadocs.GET_DEPENDENCIES_METHOD);
     writer.emitAnnotation(Override.class);
