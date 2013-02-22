@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -59,38 +60,38 @@ public final class FullGraphProcessor extends AbstractProcessor {
    * the module's dependencies are satisfied.
    */
   @Override public boolean process(Set<? extends TypeElement> types, RoundEnvironment env) {
-    try {
-      if (!env.processingOver()) {
-        // Storing module names for later retrieval as the element instance is invalidated across
-        // passes.
-        for (Element e : env.getElementsAnnotatedWith(Module.class)) {
-          delayedModuleNames.add(e.asType().toString());
-        }
-        return true;
+    if (!env.processingOver()) {
+      // Storing module names for later retrieval as the element instance is invalidated across
+      // passes.
+      for (Element e : env.getElementsAnnotatedWith(Module.class)) {
+        delayedModuleNames.add(((TypeElement) e).getQualifiedName().toString());
       }
+      return true;
+    }
 
-      Set<Element> modules = new LinkedHashSet<Element>();
-      for (String moduleName : delayedModuleNames) {
-        modules.add(processingEnv.getElementUtils().getTypeElement(moduleName));
+    Set<Element> modules = new LinkedHashSet<Element>();
+    for (String moduleName : delayedModuleNames) {
+      modules.add(processingEnv.getElementUtils().getTypeElement(moduleName));
+    }
+
+    for (Element element : modules) {
+      Map<String, Object> annotation = CodeGen.getAnnotation(Module.class, element);
+      if (!annotation.get("complete").equals(Boolean.TRUE)) {
+        continue;
       }
-
-      for (Element element : modules) {
-        Map<String, Object> annotation = CodeGen.getAnnotation(Module.class, element);
-        if (!annotation.get("complete").equals(Boolean.TRUE)) {
-          continue;
-        }
-        TypeElement moduleType = (TypeElement) element;
-        Map<String, Binding<?>> bindings = processCompleteModule(moduleType);
+      TypeElement moduleType = (TypeElement) element;
+      Map<String, Binding<?>> bindings = processCompleteModule(moduleType);
+      try {
         writeDotFile(moduleType, bindings);
+      } catch (IOException e) {
+        error("Graph processing failed: " + e, moduleType);
       }
-    } catch (IOException e) {
-      error("Graph processing failed: " + e);
     }
     return true;
   }
 
-  private void error(String message) {
-    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message);
+  private void error(String message, Element element) {
+    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
   }
 
   private Map<String, Binding<?>> processCompleteModule(TypeElement rootModule) {
@@ -141,7 +142,8 @@ public final class FullGraphProcessor extends AbstractProcessor {
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
                     "Duplicate bindings for " + key
                         + ": " + shortMethodName(clobbered.method)
-                        + ", " + shortMethodName(binding.method));
+                        + ", " + shortMethodName(binding.method),
+                    binding.method);
               }
               break;
 
@@ -175,19 +177,26 @@ public final class FullGraphProcessor extends AbstractProcessor {
   }
 
   private void collectIncludesRecursively(TypeElement module, Map<String, TypeElement> result) {
+    Map<String, Object> annotation = CodeGen.getAnnotation(Module.class, module);
+    if (annotation == null) {
+      // TODO(tbroyer): pass annotation information
+      error("No @Module on " + module, module);
+      return;
+    }
+
     // Add the module.
     result.put(module.getQualifiedName().toString(), module);
 
     // Recurse for each included module.
     Types typeUtils = processingEnv.getTypeUtils();
-    Map<String, Object> annotation = CodeGen.getAnnotation(Module.class, module);
     List<Object> seedModules = new ArrayList<Object>();
     seedModules.addAll(Arrays.asList((Object[]) annotation.get("includes")));
     if (!annotation.get("addsTo").equals(Void.class)) seedModules.add(annotation.get("addsTo"));
     for (Object include : seedModules) {
       if (!(include instanceof TypeMirror)) {
+        // TODO(tbroyer): pass annotation information
         processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING,
-            "Unexpected value for include: " + include + " in " + module);
+            "Unexpected value for include: " + include + " in " + module, module);
         continue;
       }
       TypeElement includedModule = (TypeElement) typeUtils.asElement((TypeMirror) include);
@@ -222,9 +231,7 @@ public final class FullGraphProcessor extends AbstractProcessor {
     }
 
     @Override public void getDependencies(Set<Binding<?>> get, Set<Binding<?>> injectMembers) {
-      for (Binding<?> binding : parameters) {
-        get.add(binding);
-      }
+      Collections.addAll(get, parameters);
     }
   }
 

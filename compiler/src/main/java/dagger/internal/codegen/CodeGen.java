@@ -72,21 +72,6 @@ final class CodeGen {
     return builder.toString();
   }
 
-  /** Returns a string like {@code java.util.List<java.lang.String>}. */
-  public static String parameterizedType(Class<?> raw, String... parameters) {
-    StringBuilder result = new StringBuilder();
-    result.append(raw.getName());
-    result.append("<");
-    for (int i = 0; i < parameters.length; i++) {
-      if (i != 0) {
-        result.append(", ");
-      }
-      result.append(parameters[i]);
-    }
-    result.append(">");
-    return result.toString();
-  }
-
   /** Returns a string for {@code type}. Primitive types are always boxed. */
   public static String typeToString(TypeMirror type) {
     StringBuilder result = new StringBuilder();
@@ -167,7 +152,7 @@ final class CodeGen {
         return null;
       }
       @Override public Void visitTypeVariable(TypeVariable typeVariable, Void v) {
-        result.append(typeVariable); // TypeVariable.toString() returns the name, like 'T'.
+        result.append(typeVariable.asElement().getSimpleName());
         return null;
       }
       @Override protected Void defaultAction(TypeMirror typeMirror, Void v) {
@@ -199,7 +184,8 @@ final class CodeGen {
    */
   public static Map<String, Object> getAnnotation(Class<?> annotationType, Element element) {
     for (AnnotationMirror annotation : element.getAnnotationMirrors()) {
-      if (!annotation.getAnnotationType().toString().equals(annotationType.getName())) {
+      if (!CodeGen.rawTypeToString(annotation.getAnnotationType(), '$')
+          .equals(annotationType.getName())) {
         continue;
       }
 
