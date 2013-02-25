@@ -1,4 +1,4 @@
-package assisted;
+package geometry;
 
 import dagger.Factory;
 import dagger.Module;

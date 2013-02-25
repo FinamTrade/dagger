@@ -1,4 +1,4 @@
-package assisted;
+package geometry;
 
 public interface Circle {
 
