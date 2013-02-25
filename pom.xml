@@ -36,6 +36,7 @@
     <module>compiler</module>
     <module>core</module>
     <module>examples</module>
+    <module>gwt</module>
   </modules>
 
   <properties>
