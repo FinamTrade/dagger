@@ -60,7 +60,7 @@ import static dagger.internal.RuntimeAggregatingPlugin.getAllModuleAdapters;
  *   <li>Circular dependencies.</li>
  * </ul>
  */
-public final class ObjectGraph {
+public class ObjectGraph {
   private final ObjectGraph base;
   private final Linker linker;
   private final Map<Class<?>, StaticInjection> staticInjections;
@@ -103,7 +103,7 @@ public final class ObjectGraph {
     return makeGraph(null, plugin, modules);
   }
 
-  private static ObjectGraph makeGraph(ObjectGraph base, Plugin plugin, Object... modules) {
+  static ObjectGraph makeGraph(ObjectGraph base, Plugin plugin, Object... modules) {
     Map<String, Class<?>> entryPoints = new LinkedHashMap<String, Class<?>>();
     Map<Class<?>, StaticInjection> staticInjections
         = new LinkedHashMap<Class<?>, StaticInjection>();

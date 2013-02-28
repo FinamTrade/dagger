@@ -1,0 +1,14 @@
+<module>
+  <inherits name="com.google.gwt.core.Core" />
+
+  <source path="">
+    <exclude name="**/codegen/**" />
+    <exclude name="super/**" />
+  </source>
+
+  <super-source path="super" />
+
+  <generate-with class="dagger.internal.codegen.PluginGenerator">
+    <when-type-assignable class="dagger.internal.Plugin" />
+  </generate-with>
+</module>
