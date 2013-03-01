@@ -20,6 +20,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <classifier>sources</classifier>
+    </dependency>
+    <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-dev</artifactId>
       <version>${gwt.version}</version>
@@ -38,6 +43,12 @@
       <groupId>com.squareup</groupId>
       <artifactId>dagger</artifactId>
       <version>${project.version}</version>
+      <classifier>sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup</groupId>
+      <artifactId>dagger</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 
@@ -51,7 +62,7 @@
       </resource>
       <resource>
         <!-- where sources will be unpacked by maven-dependency-plugin -->
-        <directory>${project.build.directory}/generated-sources/gwt-super-source</directory>
+        <directory>${project.build.directory}/generated-sources/gwt-source</directory>
       </resource>
     </resources>
     <plugins>
@@ -65,11 +76,11 @@
               <goal>unpack-dependencies</goal>
             </goals>
             <configuration>
-              <includeArtifactIds>javax.inject,com.squareup.dagger</includeArtifactIds>
+              <includeArtifactIds>javax.inject,dagger</includeArtifactIds>
               <classifier>sources</classifier>
               <excludeTransitive>true</excludeTransitive>
               <excludes>META-INF/MANIFEST.MF</excludes>
-              <outputDirectory>${project.build.directory}/generated-sources/gwt-super-source/dagger/super</outputDirectory>
+              <outputDirectory>${project.build.directory}/generated-sources/gwt-source/</outputDirectory>
             </configuration>
           </execution>
         </executions>

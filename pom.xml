@@ -84,6 +84,12 @@
         <groupId>javax.inject</groupId>
         <artifactId>javax.inject</artifactId>
         <version>${javax.inject.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>${javax.inject.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>

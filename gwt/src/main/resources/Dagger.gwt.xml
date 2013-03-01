@@ -3,6 +3,7 @@
 
   <source path="">
     <exclude name="**/codegen/**" />
+    <exclude name="**/plugins/**" />
     <exclude name="super/**" />
   </source>
 

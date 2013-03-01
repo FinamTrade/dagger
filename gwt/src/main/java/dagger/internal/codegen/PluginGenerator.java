@@ -76,16 +76,17 @@ public class PluginGenerator extends IncrementalGenerator {
           CLASS_SIMPLE_NAME, Plugin.class.getCanonicalName());
       sw.indent();
 
-      sw.println("@java.lang.Override");
-      sw.println("public %s<?> getAtInjectBinding" +
-          "(String key, String className, boolean mustBeInjectable) {",
+      sw.println("@Override");
+      sw.println("public %s<?> getAtInjectBinding"
+          + "(String key, String className, boolean mustBeInjectable) {",
           Binding.class.getCanonicalName());
       sw.indent();
       printInstantiations(injectAdapterNames, sw);
       sw.outdent();
       sw.println("}");
 
-      sw.println("@java.lang.Override");
+      sw.println("@Override");
+      sw.println("@SuppressWarnings(\"unchecked\")");
       sw.println("public <T> %s<T> getModuleAdapter(Class<? extends T> moduleClass, T module) {",
           ModuleAdapter.class.getCanonicalName());
       sw.indent();
@@ -94,7 +95,7 @@ public class PluginGenerator extends IncrementalGenerator {
       sw.outdent();
       sw.println("}");
 
-      sw.println("@java.lang.Override");
+      sw.println("@Override");
       sw.println("public StaticInjection getStaticInjection(Class<?> injectedClass) {");
       sw.indent();
       sw.println("String className = injectedClass.getName();");

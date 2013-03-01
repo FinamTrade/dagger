@@ -1,12 +1,7 @@
 package dagger;
 
 import com.google.gwt.core.client.GWT;
-import dagger.internal.*;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import static dagger.internal.RuntimeAggregatingPlugin.getAllModuleAdapters;
+import dagger.internal.Plugin;
 
 public class GwtObjectGraph {
 
