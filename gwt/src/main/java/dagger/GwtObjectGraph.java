@@ -6,6 +6,6 @@ import dagger.internal.Plugin;
 public class GwtObjectGraph {
 
   public ObjectGraph create(Object... modules) {
-    return ObjectGraph.makeGraph(null, GWT.<Plugin>create(Plugin.class), modules);
+    return ObjectGraph.DaggerObjectGraph.makeGraph(null, GWT.<Plugin>create(Plugin.class), modules);
   }
 }
