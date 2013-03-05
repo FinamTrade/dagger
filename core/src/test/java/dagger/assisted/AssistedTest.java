@@ -3,10 +3,13 @@ package dagger.assisted;
 import dagger.*;
 import junit.framework.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+@RunWith(JUnit4.class)
 public final class AssistedTest {
   @Test
   public void simpleAssistedTest() {
