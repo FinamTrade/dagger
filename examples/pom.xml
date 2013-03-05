@@ -32,5 +32,6 @@
   <modules>
     <module>simple</module>
     <module>assisted</module>
+    <module>gwt</module>
   </modules>
 </project>
