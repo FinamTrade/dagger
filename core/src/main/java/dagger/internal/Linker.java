@@ -152,7 +152,7 @@ public final class Linker {
    * the linked bindings, and then release the lock.
    */
   private void assertLockHeld() {
-    if (!ThreadUtils.holdsLock(this)) throw new AssertionError();
+    if (!Thread.holdsLock(this)) throw new AssertionError();
   }
 
   /**

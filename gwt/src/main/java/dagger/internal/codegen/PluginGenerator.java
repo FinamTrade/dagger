@@ -14,6 +14,7 @@ import com.google.gwt.user.rebind.SourceWriter;
 import dagger.internal.Binding;
 import dagger.internal.ModuleAdapter;
 import dagger.internal.Plugin;
+import dagger.internal.StaticInjection;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -23,9 +24,9 @@ public class PluginGenerator extends IncrementalGenerator {
 
   private static final String PACKAGE_NAME = "dagger.internal.gwt";
   private static final String CLASS_SIMPLE_NAME = "GwtPlugin";
-  private static final String INJECT_ADAPTER_NAME = "InjectAdapter";
-  private static final String MODULE_ADAPTER_NAME = "ModuleAdapter";
-  private static final String STATIC_INJECTION_NAME = "StaticInjection";
+  private static final String INJECT_ADAPTER_SUFFIX = "$InjectAdapter";
+  private static final String MODULE_ADAPTER_SUFFIX = "$ModuleAdapter";
+  private static final String STATIC_INJECTION_SUFFIX = "$StaticInjection";
 
   @Override
   public RebindResult generateIncrementally(
@@ -53,23 +54,13 @@ public class PluginGenerator extends IncrementalGenerator {
 
       for (JClassType type : typeOracle.getTypes()) {
         String className = type.getQualifiedSourceName();
-        int dotIndex = className.lastIndexOf('.');
-        String simpleName = className;
-        String prefixName = "";
-        if (dotIndex >= 0) {
-          simpleName = className.substring(dotIndex + 1);
-          prefixName = className.substring(0, dotIndex);
-        }
 
-        if (simpleName.equals(INJECT_ADAPTER_NAME)
-            && typeOracle.findType(prefixName) != null) {
-          injectAdapterNames.add(prefixName + "$" + INJECT_ADAPTER_NAME);
-        } else if (simpleName.equals(MODULE_ADAPTER_NAME)
-            && typeOracle.findType(prefixName) != null) {
-          moduleAdapterNames.add(prefixName + "$" + MODULE_ADAPTER_NAME);
-        } else if (simpleName.equals(STATIC_INJECTION_NAME)
-            && typeOracle.findType(prefixName) != null) {
-          staticInjectionNames.add(prefixName + "$" + STATIC_INJECTION_NAME);
+        if (foundAdapter(className + INJECT_ADAPTER_SUFFIX)) {
+          injectAdapterNames.add(className);
+        } else if (foundAdapter(className + MODULE_ADAPTER_SUFFIX)) {
+          moduleAdapterNames.add(className);
+        } else if (foundAdapter(className + STATIC_INJECTION_SUFFIX)) {
+          staticInjectionNames.add(className);
         }
       }
 
@@ -78,7 +69,7 @@ public class PluginGenerator extends IncrementalGenerator {
           + "(String key, String className, boolean mustBeInjectable) {",
           Binding.class.getCanonicalName());
       sw.indent();
-      printInstantiations(injectAdapterNames, sw);
+      printInstantiations(injectAdapterNames, INJECT_ADAPTER_SUFFIX, null, sw);
       sw.outdent();
       sw.println("}");
 
@@ -87,16 +78,18 @@ public class PluginGenerator extends IncrementalGenerator {
       sw.println("public <T> %s<T> getModuleAdapter(Class<? extends T> moduleClass, T module) {",
           ModuleAdapter.class.getCanonicalName());
       sw.indent();
-      sw.print("String className = moduleClass.getName();");
-      printInstantiations(moduleAdapterNames, sw);
+      sw.println("String className = moduleClass.getName();");
+      printInstantiations(moduleAdapterNames, MODULE_ADAPTER_SUFFIX,
+          ModuleAdapter.class.getName() + "<T>", sw);
       sw.outdent();
       sw.println("}");
 
       sw.println("@Override");
-      sw.println("public StaticInjection getStaticInjection(Class<?> injectedClass) {");
+      sw.println("public %s getStaticInjection(Class<?> injectedClass) {",
+          StaticInjection.class.getName());
       sw.indent();
       sw.println("String className = injectedClass.getName();");
-      printInstantiations(staticInjectionNames, sw);
+      printInstantiations(staticInjectionNames, STATIC_INJECTION_SUFFIX, null, sw);
       sw.outdent();
       sw.println("}");
 
@@ -110,7 +103,9 @@ public class PluginGenerator extends IncrementalGenerator {
         PACKAGE_NAME + "." + CLASS_SIMPLE_NAME);
   }
 
-  private void printInstantiations(List<String> classNames, SourceWriter sw) {
+  private void printInstantiations(
+      List<String> classNames, String suffix, String castClassName, SourceWriter sw) {
+
     boolean first = true;
     for (String className : classNames) {
       if (first) {
@@ -120,7 +115,11 @@ public class PluginGenerator extends IncrementalGenerator {
       }
       sw.println("if (className.equals(\"%s\")) {", className);
       sw.indent();
-      sw.println("return new %s();", className);
+      if (castClassName != null) {
+        sw.println("return (%s) new %s();", castClassName, className + suffix);
+      } else {
+        sw.println("return new %s();", className + suffix);
+      }
       sw.outdent();
       sw.print("}");
     }
@@ -133,5 +132,14 @@ public class PluginGenerator extends IncrementalGenerator {
   @Override
   public long getVersionId() {
     return 0;
+  }
+
+  private boolean foundAdapter(String adapterName) {
+    try {
+      Class.forName(adapterName, false, Thread.currentThread().getContextClassLoader());
+      return true;
+    } catch (Throwable t) {
+      return false;
+    }
   }
 }
