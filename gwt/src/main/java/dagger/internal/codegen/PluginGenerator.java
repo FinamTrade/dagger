@@ -43,6 +43,7 @@ public class PluginGenerator extends IncrementalGenerator {
       TypeOracle typeOracle = context.getTypeOracle();
       ClassSourceFileComposerFactory factory =
           new ClassSourceFileComposerFactory(PACKAGE_NAME, CLASS_SIMPLE_NAME);
+      factory.addImplementedInterface(Plugin.class.getName());
 
       SourceWriter sw = factory.createSourceWriter(context, writer);
 
@@ -72,10 +73,6 @@ public class PluginGenerator extends IncrementalGenerator {
         }
       }
 
-      sw.println("public class %s implements %s {",
-          CLASS_SIMPLE_NAME, Plugin.class.getCanonicalName());
-      sw.indent();
-
       sw.println("@Override");
       sw.println("public %s<?> getAtInjectBinding"
           + "(String key, String className, boolean mustBeInjectable) {",
@@ -103,15 +100,11 @@ public class PluginGenerator extends IncrementalGenerator {
       sw.outdent();
       sw.println("}");
 
-      sw.outdent();
-      sw.println("}");
-
       sw.commit(logger);
     } catch (Exception e) {
       logger.log(TreeLogger.Type.ERROR, e.toString());
       throw new UnableToCompleteException();
     }
-    context.commit(logger, writer);
 
     return new RebindResult(RebindMode.USE_ALL_NEW_WITH_NO_CACHING,
         PACKAGE_NAME + "." + CLASS_SIMPLE_NAME);

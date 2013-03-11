@@ -79,8 +79,8 @@
               <includeArtifactIds>javax.inject,dagger</includeArtifactIds>
               <classifier>sources</classifier>
               <excludeTransitive>true</excludeTransitive>
-              <excludes>META-INF/MANIFEST.MF,**/plugins/**,**/ThreadUtils.java</excludes>
-              <outputDirectory>${project.build.directory}/generated-sources/gwt-source/super</outputDirectory>
+              <excludes>META-INF/MANIFEST.MF,**/plugins/**,**/Linker.java,**/Binding.java,**/Keys.java,**/ObjectGraph.java</excludes>
+              <outputDirectory>${project.build.directory}/generated-sources/gwt-source/dagger/override</outputDirectory>
             </configuration>
           </execution>
         </executions>

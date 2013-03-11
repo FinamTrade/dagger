@@ -7,7 +7,7 @@
     <exclude name="super/**" />
   </source>
 
-  <super-source path="super" />
+  <super-source path="override" />
 
   <generate-with class="dagger.internal.codegen.PluginGenerator">
     <when-type-assignable class="dagger.internal.Plugin" />

@@ -1,6 +1,6 @@
 <module rename-to="coffee">
   <inherits name="com.google.gwt.user.User" />
-  <inherits name="Dagger" />
+  <inherits name="dagger.Dagger" />
 
   <source path="" />
 
