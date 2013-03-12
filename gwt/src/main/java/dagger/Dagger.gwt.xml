@@ -4,6 +4,7 @@
   <source path="">
     <exclude name="**/codegen/**" />
     <exclude name="**/plugins/**" />
+    <exclude name="**/RuntimeAggregatingPlugin.java" />
   </source>
 
   <super-source path="override" />

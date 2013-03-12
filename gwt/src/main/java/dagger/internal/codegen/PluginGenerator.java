@@ -36,7 +36,7 @@ public class PluginGenerator extends IncrementalGenerator {
     PrintWriter writer = context.tryCreate(logger, PACKAGE_NAME, CLASS_SIMPLE_NAME);
 
     if (writer == null) {
-      new RebindResult(RebindMode.USE_ALL_NEW_WITH_NO_CACHING,
+      return new RebindResult(RebindMode.USE_ALL_NEW_WITH_NO_CACHING,
           PACKAGE_NAME + "." + CLASS_SIMPLE_NAME);
     }
 
@@ -96,6 +96,7 @@ public class PluginGenerator extends IncrementalGenerator {
       sw.commit(logger);
     } catch (Exception e) {
       logger.log(TreeLogger.Type.ERROR, e.toString());
+      e.printStackTrace();
       throw new UnableToCompleteException();
     }
 

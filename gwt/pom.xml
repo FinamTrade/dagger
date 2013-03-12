@@ -76,10 +76,10 @@
               <goal>unpack-dependencies</goal>
             </goals>
             <configuration>
-              <includeArtifactIds>javax.inject,dagger</includeArtifactIds>
+              <includeArtifactIds>javax.inject</includeArtifactIds>
               <classifier>sources</classifier>
               <excludeTransitive>true</excludeTransitive>
-              <excludes>META-INF/MANIFEST.MF,**/plugins/**,**/Linker.java,**/Binding.java,**/Keys.java,**/ObjectGraph.java</excludes>
+              <excludes>META-INF/MANIFEST.MF</excludes>
               <outputDirectory>${project.build.directory}/generated-sources/gwt-source/dagger/override</outputDirectory>
             </configuration>
           </execution>
