@@ -133,7 +133,7 @@ public final class RuntimeAggregatingPlugin implements Plugin {
 
   private void logNotFound(String type, String name, RuntimeException e) {
     if (logger.isLoggable(Level.FINE)) {
-      logger.log(Level.FINE, String.format("%s for %s not found.", type, name), e);
+      logger.log(Level.FINE, type + " for " + name + " not found.", e);
     }
   }
 }

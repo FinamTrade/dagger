@@ -23,12 +23,15 @@ import dagger.internal.Linker;
 import dagger.internal.ModuleAdapter;
 import dagger.internal.Plugin;
 import dagger.internal.ProblemDetector;
+import dagger.internal.RuntimeAggregatingPlugin;
 import dagger.internal.StaticInjection;
 import dagger.internal.ThrowingErrorHandler;
 import dagger.internal.UniqueMap;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static dagger.internal.RuntimeAggregatingPlugin.getAllModuleAdapters;
 
 /**
  * A graph of objects linked by their dependencies.
@@ -119,7 +122,7 @@ public abstract class ObjectGraph {
    * the graph at runtime.
    */
   public static ObjectGraph create(Object... modules) {
-    Plugin plugin = GWT.create(Plugin.class);
+    Plugin plugin = new RuntimeAggregatingPlugin(GWT.<Plugin>create(Plugin.class));
     return DaggerObjectGraph.makeGraph(null, plugin, modules);
   }
 
@@ -270,52 +273,6 @@ public abstract class ObjectGraph {
         binding = linker.requestBinding(key, moduleClass, false);
       }
       return binding;
-    }
-  }
-
-  public static Map<Class<?>, ModuleAdapter<?>> getAllModuleAdapters(Plugin plugin,
-                                                                     Object[] seedModules) {
-    // Create a module adapter for each seed module.
-    ModuleAdapter<?>[] seedAdapters = new ModuleAdapter<?>[seedModules.length];
-    int s = 0;
-    for (Object module : seedModules) {
-      if (module instanceof Class) {
-        seedAdapters[s++] = plugin.getModuleAdapter((Class<?>) module, null); // Plugin constructs.
-      } else {
-        seedAdapters[s++] = plugin.getModuleAdapter(module.getClass(), module);
-      }
-    }
-
-    Map<Class<?>, ModuleAdapter<?>> adaptersByModuleType
-        = new LinkedHashMap<Class<?>, ModuleAdapter<?>>();
-
-    // Add the adapters that we have module instances for. This way we won't
-    // construct module objects when we have a user-supplied instance.
-    for (ModuleAdapter<?> adapter : seedAdapters) {
-      adaptersByModuleType.put(adapter.getModule().getClass(), adapter);
-    }
-
-    // Next add adapters for the modules that we need to construct. This creates
-    // instances of modules as necessary.
-    for (ModuleAdapter<?> adapter : seedAdapters) {
-      collectIncludedModulesRecursively(plugin, adapter, adaptersByModuleType);
-    }
-
-    return adaptersByModuleType;
-  }
-
-  /**
-   * Fills {@code result} with the module adapters for the includes of {@code
-   * adapter}, and their includes recursively.
-   */
-  private static void collectIncludedModulesRecursively(Plugin plugin, ModuleAdapter<?> adapter,
-                                                        Map<Class<?>, ModuleAdapter<?>> result) {
-    for (Class<?> include : adapter.includes) {
-      if (!result.containsKey(include)) {
-        ModuleAdapter<Object> includedModuleAdapter = plugin.getModuleAdapter(include, null);
-        result.put(include, includedModuleAdapter);
-        collectIncludedModulesRecursively(plugin, includedModuleAdapter, result);
-      }
     }
   }
 }

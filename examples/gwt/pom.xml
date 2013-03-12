@@ -25,6 +25,7 @@
 
   <artifactId>gwt-dagger-example</artifactId>
   <name>Dagger Example - GWT</name>
+  <packaging>war</packaging>
 
   <dependencies>
     <dependency>
