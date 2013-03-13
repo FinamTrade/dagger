@@ -1,18 +1,20 @@
 package coffee;
 
-import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.Button;
-import dagger.ObjectGraph;
+import dagger.DaggerEntryPoint;
 
-public class CoffeeApp implements EntryPoint {
+import javax.inject.Inject;
+
+public class CoffeeApp extends DaggerEntryPoint {
+
+  @Inject
+  CoffeeMaker coffeeMaker;
 
   @Override
-  public void onModuleLoad() {
-    final ObjectGraph objectGraph = ObjectGraph.create(new DripCoffeeModule());
-    final CoffeeMaker coffeeMaker = objectGraph.get(CoffeeMaker.class);
+  protected void onLoad() {
     Button btn = Button.wrap(Document.get().getElementById("coffeeMaker"));
 
     btn.addClickHandler(new ClickHandler() {
