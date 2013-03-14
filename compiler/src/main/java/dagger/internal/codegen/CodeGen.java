@@ -311,4 +311,11 @@ final class CodeGen {
     set.addAll(Arrays.asList(items));
     return set;
   }
+
+  public static TypeElement mirrorToElement(TypeMirror typeMirror) {
+    if (!(typeMirror instanceof DeclaredType)) {
+      return null;
+    }
+    return (TypeElement) ((DeclaredType) typeMirror).asElement();
+  }
 }
