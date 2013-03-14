@@ -203,7 +203,7 @@ public final class InjectProcessor extends AbstractProcessor {
       List<Element> fields) throws IOException {
     String packageName = CodeGen.getPackage(type).getQualifiedName().toString();
     String strippedTypeName = strippedTypeName(type.getQualifiedName().toString(), packageName);
-    TypeMirror supertype = CodeGen.getApplicationSupertype(type);
+    TypeMirror supertype = findSupertype(type);
     String adapterName = CodeGen.adapterName(type, INJECT_ADAPTER_SUFFIX);
     JavaFileObject sourceFile = processingEnv.getFiler().createSourceFile(adapterName, type);
     JavaWriter writer = new JavaWriter(sourceFile.openWriter());
@@ -442,6 +442,30 @@ public final class InjectProcessor extends AbstractProcessor {
 
   private String parameterName(boolean disambiguateFields, Element parameter) {
     return (disambiguateFields ? "parameter_" : "") + parameter.getSimpleName().toString();
+  }
+
+  private TypeMirror findSupertype(TypeElement type) {
+    TypeMirror supertype = type.getSuperclass();
+    if (supertype.getKind() == TypeKind.NONE) {
+      return null;
+    }
+
+    TypeElement supertypeElement = CodeGen.mirrorToElement(supertype);
+    if (supertypeElement == null) {
+      return null;
+    }
+
+    for (Element element : supertypeElement.getEnclosedElements()) {
+      if (element.getKind() != ElementKind.FIELD) {
+        continue;
+      }
+
+      if (element.getAnnotation(Inject.class) != null) {
+        return supertype;
+      }
+    }
+
+    return findSupertype(supertypeElement);
   }
 
   static class InjectedClass {
