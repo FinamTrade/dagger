@@ -14,7 +14,6 @@
     <gwt.version>2.5.0</gwt.version>
   </properties>
 
-  <groupId>com.squareup.dagger</groupId>
   <artifactId>dagger-gwt</artifactId>
   <name>Dagger for GWT</name>
 
