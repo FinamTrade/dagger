@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.squareup.dagger</groupId>
+    <groupId>ru.finam.dagger</groupId>
     <artifactId>dagger-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
@@ -14,7 +14,6 @@
     <gwt.version>2.5.0</gwt.version>
   </properties>
 
-  <groupId>com.squareup.dagger</groupId>
   <artifactId>dagger-gwt</artifactId>
   <name>Dagger for GWT</name>
 
@@ -40,13 +39,13 @@
       <version>${gwt.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.squareup.dagger</groupId>
+      <groupId>ru.finam.dagger</groupId>
       <artifactId>dagger</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
     </dependency>
     <dependency>
-      <groupId>com.squareup.dagger</groupId>
+      <groupId>ru.finam.dagger</groupId>
       <artifactId>dagger</artifactId>
       <version>${project.version}</version>
     </dependency>
