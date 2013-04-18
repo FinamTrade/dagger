@@ -94,14 +94,14 @@ final class ReflectiveModuleAdapter extends ModuleAdapter<Object> {
     Class<?> type = method.getReturnType();
     Class<?>[] types = method.getParameterTypes();
 
-    if (types.length != 1) {
+    if (types.length < 1) {
       throw new IllegalArgumentException("@Factory method " + method
-          + " must have only one parameter");
+          + " must have one parameter");
     }
 
     if (!type.isAssignableFrom(types[0])) {
       throw new IllegalArgumentException("@Factory method " + method
-          + " parameter type must extend or equal to return type");
+          + " first parameter type must extend or equal to return type");
     }
 
     String targetKey = Keys.get(types[0]);

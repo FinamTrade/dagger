@@ -75,14 +75,14 @@ public final class AssistedUtils {
     TypeMirror returnType = providerMethod.getReturnType();
 
     List<? extends VariableElement> params = providerMethod.getParameters();
-    if (params.size() != 1) {
+    if (params.size() < 1) {
       throw new AssertionError("@Factory method " + providerMethod
-          + " must have only one parameter");
+          + " must have one parameter");
     }
 
     if (!env.getTypeUtils().isAssignable(params.get(0).asType(), returnType)) {
       throw new AssertionError("@Factory method " + providerMethod
-          + " must have parameter which is assignable to return type");
+          + " first parameter must be assignable to return type");
     }
 
     TypeElement type = mirrorToElement(params.get(0).asType());

@@ -428,11 +428,11 @@ public final class ProvidesProcessor extends AbstractProcessor {
       writer.beginMethod("void", "getDependencies", PUBLIC, setOfBindings, "getBindings",
           setOfBindings, "injectMembersBindings");
       for (Element parameter : parameters) {
-        if (!factoryProvider) {
-          writer.emitStatement("getBindings.add(%s)", parameter.getSimpleName().toString());
-        } else {
+        if (factoryProvider) {
           writer.emitStatement("injectMembersBindings.add(%s)",
               parameter.getSimpleName().toString());
+        } else {
+          writer.emitStatement("getBindings.add(%s)", parameter.getSimpleName().toString());
         }
       }
       writer.endMethod();
@@ -467,7 +467,17 @@ public final class ProvidesProcessor extends AbstractProcessor {
         else first = false;
         statement.append(assistedParameterName(factoryMethodParams.get(index)));
       }
-      statement.append(" }))");
+      statement.append(" })");
+      first = true;
+      for (Element parameter : parameters) {
+        if (first) {
+          first = false;
+          continue;
+        }
+        statement.append(", ");
+        statement.append(String.format("%s.get()", parameterName(parameter)));
+      }
+      statement.append(")");
       writer.emitStatement(statement.toString());
       writer.endMethod();
 
@@ -487,7 +497,7 @@ public final class ProvidesProcessor extends AbstractProcessor {
       for (Element parameter : parameters) {
         if (!first) args.append(", ");
         else first = false;
-        args.append(String.format("%s.get()", parameter.getSimpleName().toString()));
+        args.append(String.format("%s.get()", parameterName(parameter)));
       }
       writer.emitStatement("return module.%s(%s)", methodName, args.toString());
     }
