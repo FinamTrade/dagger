@@ -35,6 +35,7 @@ public final class GraphVisualizer {
       + "([\\w$]+)"       // Annotation simple name. Group 1.
       + "(?:\\(.*\\))?"   // Annotation arguments
       + "/)?"             // Full annotation end.
+      + "(?:adapter/)?"   // Adapter prefix.
       + "(?:members/)?"   // Members prefix.
       + "(?:[\\w$]+\\.)*" // Type package.
       + "([\\w$]+)"       // Type simple name. Group 2.

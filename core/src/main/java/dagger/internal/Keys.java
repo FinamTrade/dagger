@@ -250,7 +250,7 @@ public final class Keys {
    */
   public static String getClassName(String key) {
     int start = 0;
-    if (key.startsWith("@") || key.startsWith("members/")) {
+    if (key.startsWith("@") || key.startsWith("members/") || key.startsWith("adapter/")) {
       start = key.lastIndexOf('/') + 1;
     }
     return (key.indexOf('<', start) == -1 && key.indexOf('[', start) == -1)

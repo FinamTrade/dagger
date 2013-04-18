@@ -412,6 +412,9 @@ public final class ProvidesProcessor extends AbstractProcessor {
       writer.beginMethod("void", "attach", PUBLIC, Linker.class.getCanonicalName(), "linker");
       for (VariableElement parameter : parameters) {
         String parameterKey = GeneratorKeys.get(parameter);
+        if (parameter.asType().equals(providerMethod.getReturnType())) {
+          parameterKey = "adapter/" + parameterKey;
+        }
         writer.emitStatement("%s = (%s) linker.requestBinding(%s, %s.class)",
             parameterName(parameter),
             writer.compressType(JavaWriter.type(Binding.class,
