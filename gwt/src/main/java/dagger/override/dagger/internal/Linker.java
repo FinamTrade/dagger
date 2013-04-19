@@ -106,7 +106,8 @@ public final class Linker {
         try {
           Binding<?> jitBinding = createJitBinding(key, binding.requiredBy, mustBeInjectable);
           // Fail if the type of binding we got wasn't capable of what was requested.
-          if (!key.equals(jitBinding.provideKey) && !key.equals(jitBinding.membersKey)) {
+          if (!key.equals(jitBinding.provideKey) && !key.equals(jitBinding.membersKey)
+              && !key.equals("adapter/" + jitBinding.provideKey)) {
             throw new IllegalStateException("Unable to create binding for " + key);
           }
           // Enqueue the JIT binding so its own dependencies can be linked.
@@ -227,6 +228,7 @@ public final class Linker {
     // and we also inject the members of that type.
     if (binding.provideKey != null) {
       putIfAbsent(bindings, binding.provideKey, binding);
+      putIfAbsent(bindings, "adapter/" + binding.provideKey, binding);
     }
     if (binding.membersKey != null) {
       putIfAbsent(bindings, binding.membersKey, binding);
