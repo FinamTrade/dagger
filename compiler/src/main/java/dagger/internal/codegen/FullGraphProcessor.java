@@ -231,6 +231,9 @@ public final class FullGraphProcessor extends AbstractProcessor {
       for (int i = 0; i < method.getParameters().size(); i++) {
         VariableElement parameter = method.getParameters().get(i);
         String parameterKey = GeneratorKeys.get(parameter);
+        if (parameter.asType().equals(method.getReturnType())) {
+          parameterKey = "adapter/" + parameterKey;
+        }
         parameters[i] = linker.requestBinding(parameterKey, method.toString());
       }
     }
