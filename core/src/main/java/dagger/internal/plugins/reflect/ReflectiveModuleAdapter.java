@@ -16,6 +16,7 @@
 package dagger.internal.plugins.reflect;
 
 import dagger.Factory;
+import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
 import dagger.internal.Binding;
@@ -29,27 +30,33 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Set;
+import javax.inject.Provider;
 
 final class ReflectiveModuleAdapter extends ModuleAdapter<Object> {
   final Class<?> moduleClass;
 
   public ReflectiveModuleAdapter(Class<?> moduleClass, Module annotation) {
     super(
-        toMemberKeys(annotation.entryPoints()),
+        injectableTypesToKeys(annotation.injects()),
         annotation.staticInjections(),
         annotation.overrides(),
         annotation.includes(),
-        annotation.complete());
+        annotation.complete(),
+        annotation.library());
     this.moduleClass = moduleClass;
   }
 
-  private static String[] toMemberKeys(Class<?>[] entryPoints) {
-    String[] result = new String[entryPoints.length];
-    for (int i = 0; i < entryPoints.length; i++) {
-      result[i] = Keys.getMembersKey(entryPoints[i]);
+  private static String[] injectableTypesToKeys(Class<?>[] injectableTypes) {
+    String[] result = new String[injectableTypes.length];
+    for (int i = 0; i < injectableTypes.length; i++) {
+      Class<?> injectableType = injectableTypes[i];
+      result[i] = injectableType.isInterface()
+          ? Keys.get(injectableType)
+          : Keys.getMembersKey(injectableType);
     }
     return result;
   }
@@ -59,33 +66,51 @@ final class ReflectiveModuleAdapter extends ModuleAdapter<Object> {
       for (Method method : c.getDeclaredMethods()) {
         Provides provides = method.getAnnotation(Provides.class);
         if (provides != null) {
+          Type genericReturnType = method.getGenericReturnType();
           Factory factory = method.getAnnotation(Factory.class);
-          if (factory != null) {
-            Class<?> factoryType = factory.value();
-            String key = Keys.get(factory.value(), method.getAnnotations(), method);
-            handleFactoryBindings(bindings, factoryType, method, key);
-          } else {
-            String key = Keys.get(method.getGenericReturnType(), method.getAnnotations(), method);
-            switch (provides.type()) {
-              case UNIQUE:
-                handleBindings(bindings, method, key);
-                break;
-              case SET:
-                handleSetBindings(bindings, method, key);
-                break;
-              default:
-                throw new AssertionError("Unknown @Provides type " + provides.type());
-            }
+
+          Type typeToCheck = genericReturnType;
+          if (genericReturnType instanceof ParameterizedType) {
+            typeToCheck = ((ParameterizedType) genericReturnType).getRawType();
+          }
+          if (Provider.class.equals(typeToCheck)) {
+            throw new IllegalStateException("@Provides method must not return Provider directly: "
+                + c.getName()
+                + "."
+                + method.getName());
+          }
+          if (Lazy.class.equals(typeToCheck)) {
+            throw new IllegalStateException("@Provides method must not return Lazy directly: "
+                + c.getName()
+                + "."
+                + method.getName());
+          }
+
+          String key = Keys.get(genericReturnType, method.getAnnotations(), method);
+          switch (provides.type()) {
+            case UNIQUE:
+              if (factory != null) {
+                Class<?> factoryType = factory.value();
+                key = Keys.get(factory.value(), method.getAnnotations(), method);
+                handleFactoryBindings(bindings, factoryType, method, key);
+              } else {
+                handleBindings(bindings, method, key, library);
+              }
+              break;
+            case SET:
+              if(factory != null) {
+                throw new AssertionError("Factory type with multibinding in"
+                    + method + ". It's not supported.");
+              }
+              handleSetBindings(bindings, method, key, library);
+              break;
+            default:
+              throw new AssertionError("Unknown @Provides type " + provides.type());
           }
         }
       }
     }
   }
-
-  private <T> void handleBindings(Map<String, Binding<?>> bindings, Method method, String key) {
-    bindings.put(key, new ProviderMethodBinding<T>(method, key, module));
-  }
-
   private <T> void handleFactoryBindings(Map<String, Binding<?>> bindings, Class<T> factory,
                                          Method method, String key) {
     Type targetType = method.getGenericReturnType();
@@ -110,10 +135,16 @@ final class ReflectiveModuleAdapter extends ModuleAdapter<Object> {
         factory, targetType, method, module));
   }
 
-  private <T> void handleSetBindings(Map<String, Binding<?>> bindings, Method method, String key) {
-    String elementKey =
-        Keys.getElementKey(method.getGenericReturnType(), method.getAnnotations(), method);
-    SetBinding.<T>add(bindings, elementKey, new ProviderMethodBinding<T>(method, key, module));
+  private <T> void handleBindings(Map<String, Binding<?>> bindings, Method method, String key,
+      boolean library) {
+    bindings.put(key, new ProviderMethodBinding<T>(method, key, module, library));
+  }
+
+  private <T> void handleSetBindings(Map<String, Binding<?>> bindings, Method method, String key,
+      boolean library) {
+    String setKey = Keys.getSetKey(method.getGenericReturnType(), method.getAnnotations(), method);
+    SetBinding.<T>add(bindings, setKey, new ProviderMethodBinding<T>(method, key, module,
+        library));
   }
 
   @Override protected Object newModule() {
@@ -142,11 +173,13 @@ final class ReflectiveModuleAdapter extends ModuleAdapter<Object> {
     private final Method method;
     private final Object instance;
 
-    public ProviderMethodBinding(Method method, String key, Object instance) {
-      super(key, null, method.isAnnotationPresent(Singleton.class), method);
+    public ProviderMethodBinding(Method method, String key, Object instance, boolean library) {
+      super(key, null, method.isAnnotationPresent(Singleton.class),
+          moduleClass.getName() + "." + method.getName() + "()");
       this.method = method;
       this.instance = instance;
       method.setAccessible(true);
+      setLibrary(library);
     }
 
     @Override public void attach(Linker linker) {

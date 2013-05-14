@@ -93,7 +93,8 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
       }
     }
     if (supertype != null && supertypeBinding == null) {
-      supertypeBinding = (Binding<? super T>) linker.requestBinding(keys[k], membersKey, false);
+      supertypeBinding =
+          (Binding<? super T>) linker.requestBinding(keys[k], membersKey, false, true);
     }
   }
 
@@ -165,13 +166,9 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
 
   @Override public void getDependencies(Set<Binding<?>> get, Set<Binding<?>> injectMembers) {
     if (parameterBindings != null) {
-      for (Binding<?> binding : parameterBindings) {
-        get.add(binding);
-      }
+      Collections.addAll(get, parameterBindings);
     }
-    for (Binding<?> binding : fieldBindings) {
-      injectMembers.add(binding);
-    }
+    Collections.addAll(injectMembers, fieldBindings);
     if (supertypeBinding != null) {
       injectMembers.add(supertypeBinding);
     }
@@ -181,11 +178,7 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
     return provideKey != null ? provideKey : membersKey;
   }
 
-  /**
-   * @param mustBeInjectable true if the binding must have {@code @Inject}
-   *     annotations.
-   */
-  public static <T> Binding<T> create(Class<T> type, boolean mustBeInjectable) {
+  public static <T> Binding<T> create(Class<T> type, boolean mustHaveInjections) {
     boolean singleton = type.isAnnotationPresent(Singleton.class);
     List<String> keys = new ArrayList<String>();
     List<String> assistedKeys = new ArrayList<String>();
@@ -197,6 +190,9 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
       for (Field field : c.getDeclaredFields()) {
         if (!field.isAnnotationPresent(Inject.class) || Modifier.isStatic(field.getModifiers())) {
           continue;
+        }
+        if ((field.getModifiers() & Modifier.PRIVATE) != 0) {
+          throw new IllegalStateException("Can't inject private field: " + field);
         }
         field.setAccessible(true);
         String key = Keys.get(field.getGenericType(), field.getAnnotations(), field);
@@ -224,13 +220,14 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
       injectedConstructor = constructor;
     }
     if (injectedConstructor == null) {
-      if (injectedFields.isEmpty() && assistedFields.isEmpty() && mustBeInjectable) {
+      if (!injectedFields.isEmpty() || !assistedFields.isEmpty()) {
+        try {
+          injectedConstructor = type.getDeclaredConstructor();
+        } catch (NoSuchMethodException ignored) {
+        }
+      } else if (mustHaveInjections) {
         throw new IllegalArgumentException("No injectable members on " + type.getName()
             + ". Do you want to add an injectable constructor?");
-      }
-      try {
-        injectedConstructor = type.getDeclaredConstructor();
-      } catch (NoSuchMethodException ignored) {
       }
     }
 
@@ -238,6 +235,10 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
     String provideKey;
     List<Integer> assistedParamIndexes = new ArrayList<Integer>();
     if (injectedConstructor != null) {
+      if ((injectedConstructor.getModifiers() & Modifier.PRIVATE) != 0) {
+        throw new IllegalStateException("Can't inject private constructor: " + injectedConstructor);
+      }
+
       provideKey = Keys.get(type);
       injectedConstructor.setAccessible(true);
       Type[] types = injectedConstructor.getGenericParameterTypes();
