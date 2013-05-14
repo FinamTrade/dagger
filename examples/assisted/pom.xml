@@ -7,7 +7,7 @@
   <parent>
     <groupId>com.squareup.dagger.example</groupId>
     <artifactId>dagger-example-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>assisted-dagger-example</artifactId>

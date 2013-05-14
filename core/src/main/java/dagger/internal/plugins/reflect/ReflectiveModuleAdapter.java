@@ -98,7 +98,7 @@ final class ReflectiveModuleAdapter extends ModuleAdapter<Object> {
               }
               break;
             case SET:
-              if(factory != null) {
+              if (factory != null) {
                 throw new AssertionError("Factory type with multibinding in"
                     + method + ". It's not supported.");
               }

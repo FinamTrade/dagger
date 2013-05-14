@@ -19,7 +19,7 @@ public final class FieldAssistedTest {
     Assert.assertEquals("b", a.getB().getName());
   }
 
-  @Module(entryPoints = AFactory.class, complete = false)
+  @Module(injects = AFactory.class, complete = false)
   static class TestModule {
 
     @Provides
@@ -39,11 +39,11 @@ public final class FieldAssistedTest {
   static class A {
 
     @Inject
-    private B b;
+    B b;
 
     @Inject
     @Assisted
-    private C c;
+    C c;
 
     public C getC() {
       return c;
@@ -75,7 +75,7 @@ public final class FieldAssistedTest {
   static class BImpl implements B {
 
     @Inject
-    private D d;
+    D d;
 
     @Override
     public String getName() {

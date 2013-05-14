@@ -20,7 +20,7 @@ public final class ExtendedAssistedTest {
     Assert.assertEquals("The G", a.getName());
   }
 
-  @Module(entryPoints = AFactory.class, complete = false)
+  @Module(injects = AFactory.class, complete = false)
   static class TestModule {
 
     @Provides
@@ -39,11 +39,11 @@ public final class ExtendedAssistedTest {
 
   static class G {
     @Inject
-    private B b;
+    B b;
 
     @Inject
     @Assisted
-    private String name;
+    String name;
 
     public String getName() {
       return name;
@@ -58,7 +58,7 @@ public final class ExtendedAssistedTest {
 
     @Inject
     @Assisted
-    private C c;
+    C c;
 
     public C getC() {
       return c;
@@ -86,7 +86,7 @@ public final class ExtendedAssistedTest {
   static class BImpl implements B {
 
     @Inject
-    private D d;
+    D d;
 
     @Override
     public String getName() {
