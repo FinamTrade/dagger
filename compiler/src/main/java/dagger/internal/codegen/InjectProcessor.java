@@ -117,16 +117,27 @@ public final class InjectProcessor extends AbstractProcessor {
     // First gather the set of classes that have @Inject-annotated members.
     Set<String> injectedTypeNames = new LinkedHashSet<String>();
     for (Element element : env.getElementsAnnotatedWith(Inject.class)) {
-      Element enclosingType = element.getEnclosingElement();
-      if (!validateInjectable(enclosingType)) {
+      if (!validateInjectable(element)) {
         continue;
       }
-      injectedTypeNames.add(CodeGen.rawTypeToString(enclosingType.asType(), '.'));
+      injectedTypeNames.add(CodeGen.rawTypeToString(element.getEnclosingElement().asType(), '.'));
     }
     return injectedTypeNames;
   }
 
-  private boolean validateInjectable(Element injectableType) {
+  private boolean validateInjectable(Element injectable) {
+    Element injectableType = injectable.getEnclosingElement();
+
+    if (injectable.getKind() == ElementKind.METHOD) {
+      error("Method injection is not supported: " + injectableType + "." + injectable, injectable);
+      return false;
+    }
+    if (injectable.getModifiers().contains(Modifier.PRIVATE)) {
+      error("Can't inject a private field or constructor: " + injectableType + "." + injectable,
+          injectable);
+      return false;
+    }
+
     ElementKind elementKind = injectableType.getEnclosingElement().getKind();
     boolean isClassOrInterface = elementKind.isClass() || elementKind.isInterface();
     boolean isStatic = injectableType.getModifiers().contains(Modifier.STATIC);
@@ -333,9 +344,10 @@ public final class InjectProcessor extends AbstractProcessor {
       }
     }
     if (supertype != null) {
-      writer.emitStatement("%s = (%s) linker.requestBinding(%s, %s.class, false)",
+      writer.emitStatement("%s = (%s) linker.requestBinding(%s, %s.class, false, true)",
           "supertype",
-          JavaWriter.type(Binding.class, CodeGen.rawTypeToString(supertype, '.')),
+          writer.compressType(JavaWriter.type(Binding.class,
+              CodeGen.rawTypeToString(supertype, '.'))),
           JavaWriter.stringLiteral(GeneratorKeys.rawMembersKey(supertype)),
           strippedTypeName);
     }

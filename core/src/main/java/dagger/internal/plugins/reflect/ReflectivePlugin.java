@@ -31,7 +31,7 @@ import javax.inject.Inject;
  */
 public final class ReflectivePlugin implements Plugin {
   @Override public Binding<?> getAtInjectBinding(
-      String key, String className, boolean mustBeInjectable) {
+      String key, String className, boolean mustHaveInjections) {
     Class<?> c;
     try {
       c = Class.forName(className);
@@ -43,7 +43,7 @@ public final class ReflectivePlugin implements Plugin {
       return null;
     }
 
-    return ReflectiveAtInjectBinding.create(c, mustBeInjectable);
+    return ReflectiveAtInjectBinding.create(c, mustHaveInjections);
   }
 
   @SuppressWarnings("unchecked") // Runtime checks validate that the result type matches 'T'.
@@ -51,6 +51,10 @@ public final class ReflectivePlugin implements Plugin {
     Module annotation = moduleClass.getAnnotation(Module.class);
     if (annotation == null) {
       throw new IllegalArgumentException("No @Module on " + moduleClass.getName());
+    }
+    if (moduleClass.getSuperclass() != Object.class) {
+      throw new IllegalArgumentException(
+          "Modules must not extend from other classes: " + moduleClass.getName());
     }
     return (ModuleAdapter<T>) new ReflectiveModuleAdapter(moduleClass, annotation);
   }

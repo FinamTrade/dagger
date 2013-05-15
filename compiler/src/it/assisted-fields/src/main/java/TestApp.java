@@ -36,7 +36,7 @@ public class TestApp implements Runnable {
     B newB(String name, @Named("a") String a, @Named("b") String b);
   }
 
-  @Module(entryPoints = A.class)
+  @Module(injects = A.class)
   static class AssistedModule {
     @Provides
     @Factory(BFactory.class)

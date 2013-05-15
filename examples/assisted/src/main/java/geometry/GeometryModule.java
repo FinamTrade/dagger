@@ -6,7 +6,7 @@ import dagger.Provides;
 
 import javax.inject.Named;
 
-@Module(entryPoints = GeometryApp.class)
+@Module(injects = GeometryApp.class)
 public class GeometryModule {
   @Provides
   @Factory(CircleFactory.class)

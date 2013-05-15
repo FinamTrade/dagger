@@ -15,7 +15,6 @@
  */
 package dagger.internal.codegen;
 
-import dagger.internal.Keys;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -317,5 +316,28 @@ final class CodeGen {
       return null;
     }
     return (TypeElement) ((DeclaredType) typeMirror).asElement();
+  }
+
+  /**
+   * Returns a user-presentable string like {@code
+   * coffee.CoffeeModule#provideHeater()}.
+   */
+  public static String methodName(ExecutableElement method) {
+    return ((TypeElement) method.getEnclosingElement()).getQualifiedName()
+        + "." + method.getSimpleName() + "()";
+  }
+
+  public static boolean isInterface(TypeMirror typeMirror) {
+    return typeMirror instanceof DeclaredType
+        && ((DeclaredType) typeMirror).asElement().getKind() == ElementKind.INTERFACE;
+  }
+
+  static boolean isStatic(Element element) {
+    for (Modifier modifier : element.getModifiers()) {
+      if (modifier.equals(Modifier.STATIC)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

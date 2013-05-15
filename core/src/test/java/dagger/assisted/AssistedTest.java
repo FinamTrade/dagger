@@ -28,7 +28,7 @@ public final class AssistedTest {
   }
 
 
-  @Module(entryPoints = AFactory.class, complete = false)
+  @Module(injects = AFactory.class, complete = false)
   static class TestModule {
 
     @Provides
@@ -87,7 +87,7 @@ public final class AssistedTest {
   static class BImpl implements B {
 
     @Inject
-    private D d;
+    D d;
 
     @Override
     public String getName() {
