@@ -18,8 +18,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>ru.finam.dagger</groupId>
-    <artifactId>dagger-parent</artifactId>
+    <groupId>ru.finam.dagger.example</groupId>
+    <artifactId>dagger-example-parent</artifactId>
     <version>1.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
@@ -30,12 +30,12 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.squareup.dagger</groupId>
+      <groupId>ru.finam.dagger</groupId>
       <artifactId>dagger</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.squareup.dagger</groupId>
+      <groupId>ru.finam.dagger</groupId>
       <artifactId>dagger-compiler</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>

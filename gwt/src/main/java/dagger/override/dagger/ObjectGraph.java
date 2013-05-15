@@ -31,8 +31,6 @@ import dagger.internal.UniqueMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static dagger.internal.RuntimeAggregatingPlugin.getAllModuleAdapters;
-
 /**
  * A graph of objects linked by their dependencies.
  *
@@ -61,12 +59,14 @@ import static dagger.internal.RuntimeAggregatingPlugin.getAllModuleAdapters;
  * </ul>
  */
 public abstract class ObjectGraph {
+  ObjectGraph() {
+  }
 
   /**
    * Returns an instance of {@code type}.
    *
    * @throws IllegalArgumentException if {@code type} is not one of this object
-   *     graph's entry point types.
+   *     graph's {@link Module#injects injectable types}.
    */
   public abstract <T> T get(Class<T> type);
 
@@ -75,13 +75,13 @@ public abstract class ObjectGraph {
    * inherited from its supertypes.
    *
    * @throws IllegalArgumentException if the runtime type of {@code instance} is
-   *     not one of this object graph's entry point types.
+   *     not one of this object graph's {@link Module#injects injectable types}.
    */
   public abstract <T> T inject(T instance);
 
   /**
    * Returns a new object graph that includes all of the objects in this graph,
-   * plus additional objects in the {@literal @}{@link dagger.Module}-annotated
+   * plus additional objects in the {@literal @}{@link Module}-annotated
    * modules. This graph is a subgraph of the returned graph.
    *
    * <p>The current graph is not modified by this operation: its objects and the
@@ -110,7 +110,7 @@ public abstract class ObjectGraph {
 
   /**
    * Returns a new dependency graph using the {@literal @}{@link
-   * dagger.Module}-annotated modules.
+   * Module}-annotated modules.
    *
    * <p>This <strong>does not</strong> inject any members. Most applications
    * should call {@link #injectStatics} to inject static members and {@link
@@ -131,28 +131,28 @@ public abstract class ObjectGraph {
     private final DaggerObjectGraph base;
     private final Linker linker;
     private final Map<Class<?>, StaticInjection> staticInjections;
-    private final Map<String, Class<?>> entryPoints;
+    private final Map<String, Class<?>> injectableTypes;
     private final Plugin plugin;
 
     DaggerObjectGraph(DaggerObjectGraph base,
         Linker linker,
         Plugin plugin,
         Map<Class<?>, StaticInjection> staticInjections,
-        Map<String, Class<?>> entryPoints) {
+        Map<String, Class<?>> injectableTypes) {
       if (linker == null) throw new NullPointerException("linker");
       if (plugin == null) throw new NullPointerException("plugin");
       if (staticInjections == null) throw new NullPointerException("staticInjections");
-      if (entryPoints == null) throw new NullPointerException("entryPoints");
+      if (injectableTypes == null) throw new NullPointerException("injectableTypes");
 
       this.base = base;
       this.linker = linker;
       this.plugin = plugin;
       this.staticInjections = staticInjections;
-      this.entryPoints = entryPoints;
+      this.injectableTypes = injectableTypes;
     }
 
     static ObjectGraph makeGraph(DaggerObjectGraph base, Plugin plugin, Object... modules) {
-      Map<String, Class<?>> entryPoints = new LinkedHashMap<String, Class<?>>();
+      Map<String, Class<?>> injectableTypes = new LinkedHashMap<String, Class<?>>();
       Map<Class<?>, StaticInjection> staticInjections
           = new LinkedHashMap<Class<?>, StaticInjection>();
 
@@ -161,8 +161,8 @@ public abstract class ObjectGraph {
       Map<String, Binding<?>> baseBindings = new UniqueMap<String, Binding<?>>();
       Map<String, Binding<?>> overrideBindings = new UniqueMap<String, Binding<?>>();
       for (ModuleAdapter<?> moduleAdapter : getAllModuleAdapters(plugin, modules).values()) {
-        for (String key : moduleAdapter.entryPoints) {
-          entryPoints.put(key, moduleAdapter.getModule().getClass());
+        for (String key : moduleAdapter.injectableTypes) {
+          injectableTypes.put(key, moduleAdapter.getModule().getClass());
         }
         for (Class<?> c : moduleAdapter.staticInjections) {
           staticInjections.put(c, null);
@@ -177,7 +177,7 @@ public abstract class ObjectGraph {
       linker.installBindings(baseBindings);
       linker.installBindings(overrideBindings);
 
-      return new DaggerObjectGraph(base, linker, plugin, staticInjections, entryPoints);
+      return new DaggerObjectGraph(base, linker, plugin, staticInjections, injectableTypes);
     }
 
 
@@ -185,7 +185,6 @@ public abstract class ObjectGraph {
       linkEverything();
       return makeGraph(this, plugin, modules);
     }
-
 
     private void linkStaticInjections() {
       for (Map.Entry<Class<?>, StaticInjection> entry : staticInjections.entrySet()) {
@@ -198,9 +197,9 @@ public abstract class ObjectGraph {
       }
     }
 
-    private void linkEntryPoints() {
-      for (Map.Entry<String, Class<?>> entry : entryPoints.entrySet()) {
-        linker.requestBinding(entry.getKey(), entry.getValue(), false);
+    private void linkInjectableTypes() {
+      for (Map.Entry<String, Class<?>> entry : injectableTypes.entrySet()) {
+        linker.requestBinding(entry.getKey(), entry.getValue(), false, true);
       }
     }
 
@@ -210,12 +209,14 @@ public abstract class ObjectGraph {
     }
 
     /**
-     * Links all bindings, entry points and static injections.
+     * Links all bindings, injectable types and static injections.
      */
     private Map<String, Binding<?>> linkEverything() {
-      linkStaticInjections();
-      linkEntryPoints();
-      return linker.linkAll();
+      synchronized (linker) {
+        linkStaticInjections();
+        linkInjectableTypes();
+        return linker.linkAll();
+      }
     }
 
     @Override public void injectStatics() {
@@ -224,9 +225,11 @@ public abstract class ObjectGraph {
       // bindings it doesn't have. Then we ask the linker to link all of those
       // requested bindings. Finally we call linkStaticInjections() again: this
       // time the linker won't return null because everything has been linked.
-      linkStaticInjections();
-      linker.linkRequested();
-      linkStaticInjections();
+      synchronized (linker) {
+        linkStaticInjections();
+        linker.linkRequested();
+        linkStaticInjections();
+      }
 
       for (Map.Entry<Class<?>, StaticInjection> entry : staticInjections.entrySet()) {
         entry.getValue().inject();
@@ -235,44 +238,86 @@ public abstract class ObjectGraph {
 
     @Override public <T> T get(Class<T> type) {
       String key = Keys.get(type);
-      String entryPointKey = Keys.getMembersKey(type);
+      String injectableTypeKey = type.isInterface() ? key : Keys.getMembersKey(type);
       @SuppressWarnings("unchecked") // The linker matches keys to bindings by their type.
-      Binding<T> binding = (Binding<T>) getEntryPointBinding(entryPointKey, key);
+          Binding<T> binding = (Binding<T>) getInjectableTypeBinding(injectableTypeKey, key);
       return binding.get();
     }
 
     @Override public <T> T inject(T instance) {
       String membersKey = Keys.getMembersKey(instance.getClass());
       @SuppressWarnings("unchecked") // The linker matches keys to bindings by their type.
-      Binding<Object> binding = (Binding<Object>) getEntryPointBinding(membersKey, membersKey);
+      Binding<Object> binding = (Binding<Object>) getInjectableTypeBinding(membersKey, membersKey);
       binding.injectMembers(instance);
       return instance;
     }
 
     /**
-     * @param entryPointKey the key used to store the entry point. This is always
-     *     a members injection key because those keys can always be created, even
-     *     if the type has no injectable constructor.
+     * @param injectableTypeKey the key used to store the injectable type. This
+     *     is a provides key for interfaces and a members injection key for
+     *     other types. That way keys can always be created, even if the type
+     *     has no injectable constructor.
      * @param key the key to use when retrieving the binding. This may be a
      *     regular (provider) key or a members key.
      */
-    private Binding<?> getEntryPointBinding(String entryPointKey, String key) {
+    private Binding<?> getInjectableTypeBinding(String injectableTypeKey, String key) {
       Class<?> moduleClass = null;
       for (DaggerObjectGraph graph = this; graph != null; graph = graph.base) {
-        moduleClass = graph.entryPoints.get(entryPointKey);
+        moduleClass = graph.injectableTypes.get(injectableTypeKey);
         if (moduleClass != null) break;
       }
       if (moduleClass == null) {
-        throw new IllegalArgumentException("No entry point for " + entryPointKey
-            + ". You must explicitly add an entry point to one of your modules.");
+        throw new IllegalArgumentException("No inject registered for " + injectableTypeKey
+            + ". You must explicitly add it to the 'injects' option in one of your modules.");
       }
 
-      Binding<?> binding = linker.requestBinding(key, moduleClass, false);
+      Binding<?> binding = linker.requestBinding(key, moduleClass, false, true);
       if (binding == null || !binding.isLinked()) {
         linker.linkRequested();
-        binding = linker.requestBinding(key, moduleClass, false);
+        binding = linker.requestBinding(key, moduleClass, false, true);
       }
       return binding;
+    }
+  }
+
+  public static Map<Class<?>, ModuleAdapter<?>> getAllModuleAdapters(Plugin plugin,
+      Object[] seedModules) {
+    // Create a module adapter for each seed module.
+    ModuleAdapter<?>[] seedAdapters = new ModuleAdapter<?>[seedModules.length];
+    int s = 0;
+    for (Object module : seedModules) {
+      if (module instanceof Class) {
+        seedAdapters[s++] = plugin.getModuleAdapter((Class<?>) module, null); // Plugin constructs.
+      } else {
+        seedAdapters[s++] = plugin.getModuleAdapter(module.getClass(), module);
+      }
+    }
+    Map<Class<?>, ModuleAdapter<?>> adaptersByModuleType
+        = new LinkedHashMap<Class<?>, ModuleAdapter<?>>();
+
+    // Add the adapters that we have module instances for. This way we won't
+    // construct module objects when we have a user-supplied instance.
+    for (ModuleAdapter<?> adapter : seedAdapters) {
+      adaptersByModuleType.put(adapter.getModule().getClass(), adapter);
+    }
+
+    // Next add adapters for the modules that we need to construct. This creates
+    // instances of modules as necessary.
+    for (ModuleAdapter<?> adapter : seedAdapters) {
+      collectIncludedModulesRecursively(plugin, adapter, adaptersByModuleType);
+    }
+
+    return adaptersByModuleType;
+  }
+
+  private static void collectIncludedModulesRecursively(Plugin plugin, ModuleAdapter<?> adapter,
+      Map<Class<?>, ModuleAdapter<?>> result) {
+    for (Class<?> include : adapter.includes) {
+      if (!result.containsKey(include)) {
+        ModuleAdapter<Object> includedModuleAdapter = plugin.getModuleAdapter(include, null);
+        result.put(include, includedModuleAdapter);
+        collectIncludedModulesRecursively(plugin, includedModuleAdapter, result);
+      }
     }
   }
 }

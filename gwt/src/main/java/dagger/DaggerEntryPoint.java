@@ -5,10 +5,6 @@ import com.google.gwt.core.client.GWT;
 
 import dagger.internal.gwt.ModuleProvider;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public abstract class DaggerEntryPoint implements EntryPoint {
 
   protected abstract void onLoad();

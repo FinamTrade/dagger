@@ -55,14 +55,14 @@ public class ModuleProviderGenerator extends IncrementalGenerator {
           continue;
         }
 
-        Class<?>[] entryPoints = moduleAnnotation.entryPoints();
+        Class<?>[] injects = moduleAnnotation.injects();
 
-        for (Class<?> entryPoint : entryPoints) {
-          if (DaggerEntryPoint.class.isAssignableFrom(entryPoint)) {
-            List<String> modules = modulesByEntryPoint.get(entryPoint.getName());
+        for (Class<?> inject : injects) {
+          if (DaggerEntryPoint.class.isAssignableFrom(inject)) {
+            List<String> modules = modulesByEntryPoint.get(inject.getName());
 
             if (modules == null) {
-              modulesByEntryPoint.put(entryPoint.getName(), modules = new ArrayList<String>());
+              modulesByEntryPoint.put(inject.getName(), modules = new ArrayList<String>());
             }
 
             modules.add(type.getQualifiedSourceName());

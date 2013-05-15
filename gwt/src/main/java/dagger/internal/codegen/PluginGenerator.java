@@ -24,9 +24,9 @@ public class PluginGenerator extends IncrementalGenerator {
 
   private static final String PACKAGE_NAME = "dagger.internal.gwt";
   private static final String CLASS_SIMPLE_NAME = "GwtPlugin";
-  private static final String INJECT_ADAPTER_SUFFIX = "$InjectAdapter";
-  private static final String MODULE_ADAPTER_SUFFIX = "$ModuleAdapter";
-  private static final String STATIC_INJECTION_SUFFIX = "$StaticInjection";
+  private static final String INJECT_ADAPTER_SUFFIX = "$$InjectAdapter";
+  private static final String MODULE_ADAPTER_SUFFIX = "$$ModuleAdapter";
+  private static final String STATIC_INJECTION_SUFFIX = "$$StaticInjection";
 
   @Override
   public RebindResult generateIncrementally(

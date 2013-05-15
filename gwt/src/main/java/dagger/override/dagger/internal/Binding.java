@@ -16,9 +16,8 @@
 package dagger.internal;
 
 import dagger.MembersInjector;
-
-import javax.inject.Provider;
 import java.util.Set;
+import javax.inject.Provider;
 
 /**
  * Injects a value of a specific type.
@@ -41,13 +40,15 @@ public abstract class Binding<T> implements Provider<T>, MembersInjector<T> {
   /** Set if this binding's {@link #attach} completed without any missing dependencies. */
   private static final int LINKED = 1 << 1;
 
-  /** Set if {@link dagger.internal.ProblemDetector} is actively visiting this binding. */
+  /** Set if {@link ProblemDetector} is actively visiting this binding. */
   private static final int VISITING = 1 << 2;
 
-  /** Set if {@link dagger.internal.ProblemDetector} has confirmed this binding
-   * has no circular dependencies.
-   */
+  /** Set if {@link ProblemDetector} has confirmed this binding has no circular dependencies. */
   private static final int CYCLE_FREE = 1 << 3;
+
+  private static final int DEPENDED_ON = 1 << 4;
+
+  private static final int LIBRARY = 1 << 5;
 
   /** The key used to provide instances of 'T', or null if this binding cannot provide instances. */
   public final String provideKey;
@@ -66,8 +67,8 @@ public abstract class Binding<T> implements Provider<T>, MembersInjector<T> {
     }
     this.provideKey = provideKey;
     this.membersKey = membersKey;
-    this.bits = (singleton ? SINGLETON : 0);
     this.requiredBy = requiredBy;
+    this.bits = (singleton ? SINGLETON : 0);
   }
 
   /**
@@ -147,9 +148,24 @@ public abstract class Binding<T> implements Provider<T>, MembersInjector<T> {
     this.bits = cycleFree ? (bits | CYCLE_FREE) : (bits & ~CYCLE_FREE);
   }
 
-  @Override public String toString() {
-    return getClass().getName()
-            + "[provideKey=\"" + provideKey + "\", memberskey=\"" + membersKey + "\"]";
+  public void setLibrary(boolean library) {
+    this.bits = library ? (bits | LIBRARY) : (bits & ~LIBRARY);
   }
 
+  public boolean library() {
+    return (bits & LIBRARY) != 0;
+  }
+
+  public void setDependedOn(boolean dependedOn) {
+    this.bits = dependedOn ? (bits | DEPENDED_ON) : (bits & ~DEPENDED_ON);
+  }
+
+  public boolean dependedOn() {
+    return (bits & DEPENDED_ON) != 0;
+  }
+
+  @Override public String toString() {
+    return getClass().getName()
+        + "[provideKey=\"" + provideKey + "\", memberskey=\"" + membersKey + "\"]";
+  }
 }
