@@ -22,6 +22,7 @@ import dagger.internal.Binding;
 import dagger.internal.Linker;
 import dagger.internal.StaticInjection;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -44,7 +45,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
+import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 
 import static dagger.internal.codegen.ProcessorJavadocs.binderTypeDocs;
 import static dagger.internal.plugins.loading.ClassloadingPlugin.INJECT_ADAPTER_SUFFIX;
@@ -61,6 +64,8 @@ import static java.lang.reflect.Modifier.PUBLIC;
 public final class InjectProcessor extends AbstractProcessor {
   private final Set<String> remainingTypeNames = new LinkedHashSet<String>();
 
+  private final List<TypeElement> injectedClasses = new ArrayList<TypeElement>();
+
   @Override public SourceVersion getSupportedSourceVersion() {
     return SourceVersion.latestSupported();
   }
@@ -69,6 +74,7 @@ public final class InjectProcessor extends AbstractProcessor {
     remainingTypeNames.addAll(getInjectedClassNames(env));
     for (Iterator<String> i = remainingTypeNames.iterator(); i.hasNext();) {
       InjectedClass injectedClass = getInjectedClass(i.next());
+      injectedClasses.add(injectedClass.type);
       // Verify that we have access to all types to be injected on this pass.
       boolean missingDependentClasses =
           !allTypesExist(injectedClass.fields)
@@ -82,6 +88,22 @@ public final class InjectProcessor extends AbstractProcessor {
           error("Code gen failed: " + e, injectedClass.type);
         }
         i.remove();
+      }
+    }
+    if (env.processingOver()) {
+      try {
+        FileObject injectedClassesFile = processingEnv.getFiler().createResource(
+            StandardLocation.SOURCE_OUTPUT, "dagger", "injectedClasses.txt",
+            injectedClasses.toArray(new TypeElement[injectedClasses.size()]));
+
+        Writer writer = injectedClassesFile.openWriter();
+        for (TypeElement type : injectedClasses) {
+          writer.append(CodeGen.rawTypeToString(type.asType(), '$') + "\n");
+        }
+        writer.close();
+      } catch (IOException e) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+            "Can't write dagger/injectedClasses.txt");
       }
     }
     if (env.processingOver() && !remainingTypeNames.isEmpty()) {

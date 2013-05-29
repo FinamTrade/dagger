@@ -7,8 +7,9 @@ import com.google.gwt.core.ext.RebindMode;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.TypeOracle;
+import com.google.gwt.thirdparty.guava.common.base.Charsets;
+import com.google.gwt.thirdparty.guava.common.collect.Iterators;
+import com.google.gwt.thirdparty.guava.common.io.Resources;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import dagger.internal.Binding;
@@ -16,8 +17,12 @@ import dagger.internal.ModuleAdapter;
 import dagger.internal.Plugin;
 import dagger.internal.StaticInjection;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class PluginGenerator extends IncrementalGenerator {
@@ -41,35 +46,21 @@ public class PluginGenerator extends IncrementalGenerator {
     }
 
     try {
-      TypeOracle typeOracle = context.getTypeOracle();
       ClassSourceFileComposerFactory factory =
           new ClassSourceFileComposerFactory(PACKAGE_NAME, CLASS_SIMPLE_NAME);
       factory.addImplementedInterface(Plugin.class.getName());
 
       SourceWriter sw = factory.createSourceWriter(context, writer);
 
-      List<String> injectAdapterNames = new ArrayList<String>();
-      List<String> moduleAdapterNames = new ArrayList<String>();
-      List<String> staticInjectionNames = new ArrayList<String>();
-
-      for (JClassType type : typeOracle.getTypes()) {
-        String className = type.getQualifiedSourceName();
-
-        if (foundAdapter(className + INJECT_ADAPTER_SUFFIX)) {
-          injectAdapterNames.add(className);
-        } else if (foundAdapter(className + MODULE_ADAPTER_SUFFIX)) {
-          moduleAdapterNames.add(className);
-        } else if (foundAdapter(className + STATIC_INJECTION_SUFFIX)) {
-          staticInjectionNames.add(className);
-        }
-      }
+      List<String> injectedClasses = retrieveResource("dagger/injectedClasses.txt");
+      List<String> moduleClasses = retrieveResource("dagger/moduleClasses.txt");
 
       sw.println("@Override");
       sw.println("public %s<?> getAtInjectBinding"
           + "(String key, String className, boolean mustBeInjectable) {",
           Binding.class.getCanonicalName());
       sw.indent();
-      printInstantiations(injectAdapterNames, INJECT_ADAPTER_SUFFIX, null, sw);
+      printInstantiations(injectedClasses, INJECT_ADAPTER_SUFFIX, null, sw);
       sw.outdent();
       sw.println("}");
 
@@ -79,7 +70,7 @@ public class PluginGenerator extends IncrementalGenerator {
           ModuleAdapter.class.getCanonicalName());
       sw.indent();
       sw.println("String className = moduleClass.getName();");
-      printInstantiations(moduleAdapterNames, MODULE_ADAPTER_SUFFIX,
+      printInstantiations(moduleClasses, MODULE_ADAPTER_SUFFIX,
           ModuleAdapter.class.getName() + "<T>", sw);
       sw.outdent();
       sw.println("}");
@@ -89,7 +80,9 @@ public class PluginGenerator extends IncrementalGenerator {
           StaticInjection.class.getName());
       sw.indent();
       sw.println("String className = injectedClass.getName();");
-      printInstantiations(staticInjectionNames, STATIC_INJECTION_SUFFIX, null, sw);
+      // TODO: static injections
+      // printInstantiations(staticInjectionNames, STATIC_INJECTION_SUFFIX, null, sw);
+      sw.println("return null;");
       sw.outdent();
       sw.println("}");
 
@@ -142,5 +135,20 @@ public class PluginGenerator extends IncrementalGenerator {
     } catch (Throwable t) {
       return false;
     }
+  }
+
+  public static List<String> retrieveResource(String filePath) throws IOException {
+    List<String> result = new ArrayList<String>();
+    try {
+      ClassLoader loader = PluginGenerator.class.getClassLoader();
+      Iterator<URL> urls = Iterators.forEnumeration(loader.getResources(filePath));
+      while (urls.hasNext()) {
+        URL url = urls.next();
+        result.addAll(Resources.readLines(url, Charsets.UTF_8));
+      }
+    } catch (FileNotFoundException e) {
+      //ignore exception silently and return empty list
+    }
+    return result;
   }
 }
