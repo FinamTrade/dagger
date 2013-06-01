@@ -1,6 +1,8 @@
 <module>
   <inherits name="com.google.gwt.core.Core" />
 
+  <define-configuration-property name="dagger.module" is-multi-valued="false" />
+
   <source path="">
     <exclude name="**/codegen/**" />
     <exclude name="**/plugins/**" />

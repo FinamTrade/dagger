@@ -7,23 +7,34 @@ import com.google.gwt.core.ext.RebindMode;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.thirdparty.guava.common.base.Charsets;
-import com.google.gwt.thirdparty.guava.common.collect.Iterators;
-import com.google.gwt.thirdparty.guava.common.io.Resources;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
+import dagger.Factory;
+import dagger.Module;
+import dagger.Provides;
 import dagger.internal.Binding;
+import dagger.internal.Keys;
+import dagger.internal.Linker;
 import dagger.internal.ModuleAdapter;
 import dagger.internal.Plugin;
+import dagger.internal.SetBinding;
 import dagger.internal.StaticInjection;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import javax.inject.Singleton;
 import java.io.PrintWriter;
-import java.net.URL;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static dagger.internal.codegen.Utils.findAllModules;
+import static dagger.internal.codegen.Utils.loadModuleType;
 
 public class PluginGenerator extends IncrementalGenerator {
 
@@ -52,8 +63,13 @@ public class PluginGenerator extends IncrementalGenerator {
 
       SourceWriter sw = factory.createSourceWriter(context, writer);
 
-      List<String> injectedClasses = retrieveResource("dagger/injectedClasses.txt");
-      List<String> moduleClasses = retrieveResource("dagger/moduleClasses.txt");
+      Class<?> rootModule = loadModuleType(context);
+      Set<Class<?>> modules = findAllModules(rootModule);
+      List<String> injectedClasses = findAllInjects(modules);
+      List<String> moduleClasses = new ArrayList<String>();
+      for (Class<?> moduleClass : modules) {
+        moduleClasses.add(moduleClass.getName());
+      }
 
       sw.println("@Override");
       sw.println("public %s<?> getAtInjectBinding"
@@ -128,27 +144,159 @@ public class PluginGenerator extends IncrementalGenerator {
     return 0;
   }
 
-  private boolean foundAdapter(String adapterName) {
-    try {
-      Class.forName(adapterName, false, Thread.currentThread().getContextClassLoader());
-      return true;
-    } catch (Throwable t) {
-      return false;
+  public static List<String> findAllInjects(Collection<Class<?>> allModules) {
+    final List<String> handledErrors = new ArrayList<String>();
+    final List<String> injectedClasses = new ArrayList<String>();
+
+    final Linker linker = new Linker(null, new GwtCompilePlugin(injectedClasses),
+        new Linker.ErrorHandler() {
+          @Override
+          public void handleErrors(List<String> errors) {
+            handledErrors.addAll(errors);
+          }
+        }
+    );
+
+    Map<String, Binding<?>> overrideBindings = new HashMap<String, Binding<?>>();
+    Map<String, Binding<?>> baseBindings = new HashMap<String, Binding<?>>();
+    synchronized (linker) {
+      for (Class<?> module : allModules) {
+        Module annotation = module.getAnnotation(Module.class);
+        Class<?>[] injects = annotation.injects();
+        boolean overrides = annotation.overrides();
+        Map<String, Binding<?>> addTo = overrides ? overrideBindings : baseBindings;
+        for (Class<?> inject : injects) {
+          String key = inject.isInterface()
+              ? Keys.get(inject) : Keys.getMembersKey(inject);
+          linker.requestBinding(key, module.getCanonicalName(), false, true);
+        }
+
+        for (Method method : module.getDeclaredMethods()) {
+          Provides provides = method.getAnnotation(Provides.class);
+          Factory factory = method.getAnnotation(Factory.class);
+          if (provides == null) {
+            continue;
+          }
+
+          Type type = method.getGenericReturnType();
+          String key = Keys.get(type, method.getAnnotations(), method);
+          if (factory != null) {
+            Class<?> factoryType = factory.value();
+            key = Keys.get(factoryType, method.getAnnotations(), method);
+          }
+          Binding binding = new ProviderMethodBinding(key, method);
+
+          switch(provides.type()) {
+            case UNIQUE:
+              addTo.put(Keys.get(type, method.getAnnotations(), method), binding);
+              break;
+            case SET:
+              key = Keys.getSetKey(type, method.getAnnotations(), method);
+              SetBinding.add(addTo, key, binding);
+              break;
+            default:
+              throw new RuntimeException("Unsupported @Provides type.");
+          }
+        }
+      }
+
+      linker.installBindings(baseBindings);
+      linker.installBindings(overrideBindings);
+
+      linker.linkAll();
+    }
+
+    if (!handledErrors.isEmpty()) {
+      StringBuilder sb = new StringBuilder();
+      for (String error : handledErrors) {
+        sb.append(error);
+        sb.append("\n");
+      }
+      throw new RuntimeException(sb.toString());
+    }
+
+    return injectedClasses;
+  }
+
+
+  private static class ProviderMethodBinding extends Binding<Object> {
+    private final Method method;
+    private final Binding<?>[] parameters;
+
+    protected ProviderMethodBinding(String provideKey, Method method) {
+      super(provideKey, null, method.getAnnotation(Singleton.class) != null,
+          method.getName());
+      this.method = method;
+      this.parameters = new Binding[method.getParameterTypes().length];
+    }
+
+    @Override public void attach(Linker linker) {
+      Type[] types = method.getGenericParameterTypes();
+      Annotation[][] annotations = method.getParameterAnnotations();
+      for (int i = 0; i < types.length; i++) {
+        Type parameterType = types[i];
+        String parameterKey = Keys.get(types[i], annotations[i], method + " parameter " + i);
+        if (parameterType.equals(method.getReturnType())) {
+          parameterKey = "adapter/" + parameterKey;
+        }
+        parameters[i] = linker.requestBinding(parameterKey, method.toString());
+      }
+    }
+
+    @Override public Object get() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override public void injectMembers(Object t) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override public void getDependencies(Set<Binding<?>> get, Set<Binding<?>> injectMembers) {
+      Collections.addAll(get, parameters);
     }
   }
 
-  public static List<String> retrieveResource(String filePath) throws IOException {
-    List<String> result = new ArrayList<String>();
-    try {
-      ClassLoader loader = PluginGenerator.class.getClassLoader();
-      Iterator<URL> urls = Iterators.forEnumeration(loader.getResources(filePath));
-      while (urls.hasNext()) {
-        URL url = urls.next();
-        result.addAll(Resources.readLines(url, Charsets.UTF_8));
-      }
-    } catch (FileNotFoundException e) {
-      //ignore exception silently and return empty list
+
+  private static class GwtCompilePlugin implements Plugin {
+    private static final String INJECT_ADAPTER_SUFFIX = "$$InjectAdapter";
+
+    private final List<String> injectedClasses;
+
+    private static final ClassLoader loader = GwtCompilePlugin.class.getClassLoader();
+
+    public GwtCompilePlugin(List<String> injectedClasses) {
+      this.injectedClasses = injectedClasses;
     }
-    return result;
+
+    @Override
+    public Binding<?> getAtInjectBinding(String key, String className, boolean mustHaveInjections) {
+      try {
+        Class<?> clazz = loader.loadClass(className);
+        if (clazz.isInterface()) {
+          return null;
+        }
+        Class<Binding<?>> bindingClass = getBindingClass(className);
+        injectedClasses.add(className);
+        return bindingClass.newInstance();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Class<Binding<?>> getBindingClass(String className)
+        throws ClassNotFoundException {
+      return (Class<Binding<?>>) loader.loadClass(className + INJECT_ADAPTER_SUFFIX);
+    }
+
+    @Override
+    public <T> ModuleAdapter<T> getModuleAdapter(Class<? extends T> moduleClass, T module) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public StaticInjection getStaticInjection(Class<?> injectedClass) {
+      throw new UnsupportedOperationException();
+    }
   }
 }

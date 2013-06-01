@@ -23,7 +23,6 @@ import dagger.internal.Linker;
 import dagger.internal.ModuleAdapter;
 import dagger.internal.SetBinding;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -49,9 +48,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
 
 import static dagger.internal.codegen.AssistedUtils.isFactoryProvider;
 import static dagger.internal.codegen.AssistedUtils.factoryKey;
@@ -73,8 +70,6 @@ public final class ProvidesProcessor extends AbstractProcessor {
   private final LinkedHashMap<String, List<ExecutableElement>> remainingTypes =
       new LinkedHashMap<String, List<ExecutableElement>>();
 
-  private final List<TypeElement> moduleClasses = new ArrayList<TypeElement>();
-
   private static final String BINDINGS_MAP = JavaWriter.type(
       Map.class, String.class.getCanonicalName(), Binding.class.getCanonicalName() + "<?>");
 
@@ -92,7 +87,6 @@ public final class ProvidesProcessor extends AbstractProcessor {
         // Attempt to get the annotation. If types are missing, this will throw
         // IllegalStateException.
         Map<String, Object> parsedAnnotation = CodeGen.getAnnotation(Module.class, type);
-        moduleClasses.add(type);
         try {
           writeModuleAdapter(type, parsedAnnotation, providesTypes);
         } catch (IOException e) {
@@ -101,22 +95,6 @@ public final class ProvidesProcessor extends AbstractProcessor {
         i.remove();
       } catch (IllegalStateException e) {
         // a dependent type was not defined, we'll catch it on another pass
-      }
-    }
-    if (env.processingOver()) {
-      try {
-        FileObject injectedClassesFile = processingEnv.getFiler().createResource(
-            StandardLocation.SOURCE_OUTPUT, "dagger", "moduleClasses.txt",
-            moduleClasses.toArray(new TypeElement[moduleClasses.size()]));
-
-        Writer writer = injectedClassesFile.openWriter();
-        for (TypeElement type : moduleClasses) {
-          writer.append(CodeGen.rawTypeToString(type.asType(), '$') + "\n");
-        }
-        writer.close();
-      } catch (IOException e) {
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-            "Can't write dagger/moduleClasses.txt");
       }
     }
     if (env.processingOver() && remainingTypes.size() > 0) {

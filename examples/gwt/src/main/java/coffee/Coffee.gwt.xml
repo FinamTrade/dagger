@@ -2,6 +2,8 @@
   <inherits name="com.google.gwt.user.User" />
   <inherits name="dagger.Dagger" />
 
+  <set-configuration-property name="dagger.module" value="coffee.DripCoffeeModule"/>
+
   <source path="" />
 
   <entry-point class="coffee.CoffeeApp" />

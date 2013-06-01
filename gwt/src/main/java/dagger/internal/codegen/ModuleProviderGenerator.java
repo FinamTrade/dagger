@@ -7,8 +7,6 @@ import com.google.gwt.core.ext.RebindMode;
 import com.google.gwt.core.ext.RebindResult;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
-import com.google.gwt.core.ext.typeinfo.JClassType;
-import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 import dagger.DaggerEntryPoint;
@@ -20,6 +18,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import static dagger.internal.codegen.Utils.findAllModules;
+import static dagger.internal.codegen.Utils.loadModuleType;
 
 public class ModuleProviderGenerator extends IncrementalGenerator {
 
@@ -39,7 +41,6 @@ public class ModuleProviderGenerator extends IncrementalGenerator {
     }
 
     try {
-      TypeOracle typeOracle = context.getTypeOracle();
       ClassSourceFileComposerFactory factory =
           new ClassSourceFileComposerFactory(PACKAGE_NAME, CLASS_SIMPLE_NAME);
       factory.addImplementedInterface(ModuleProvider.class.getName());
@@ -48,8 +49,11 @@ public class ModuleProviderGenerator extends IncrementalGenerator {
 
       Map<String, List<String>> modulesByEntryPoint = new HashMap<String, List<String>>();
 
-      for (JClassType type : typeOracle.getTypes()) {
-        Module moduleAnnotation = type.getAnnotation(Module.class);
+      Class<?> rootModule = loadModuleType(context);
+      Set<Class<?>> moduleClasses = findAllModules(rootModule);
+
+      for (Class<?> moduleClass : moduleClasses) {
+        Module moduleAnnotation = moduleClass.getAnnotation(Module.class);
 
         if (moduleAnnotation == null) {
           continue;
@@ -65,7 +69,7 @@ public class ModuleProviderGenerator extends IncrementalGenerator {
               modulesByEntryPoint.put(inject.getName(), modules = new ArrayList<String>());
             }
 
-            modules.add(type.getQualifiedSourceName());
+            modules.add(moduleClass.getCanonicalName());
           }
         }
       }

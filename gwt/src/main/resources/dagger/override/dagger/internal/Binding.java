@@ -40,10 +40,10 @@ public abstract class Binding<T> implements Provider<T>, MembersInjector<T> {
   /** Set if this binding's {@link #attach} completed without any missing dependencies. */
   private static final int LINKED = 1 << 1;
 
-  /** Set if {@link ProblemDetector} is actively visiting this binding. */
+  /** Set if {@link dagger.internal.ProblemDetector} is actively visiting this binding. */
   private static final int VISITING = 1 << 2;
 
-  /** Set if {@link ProblemDetector} has confirmed this binding has no circular dependencies. */
+  /** Set if {@link dagger.internal.ProblemDetector} has confirmed this binding has no circular dependencies. */
   private static final int CYCLE_FREE = 1 << 3;
 
   private static final int DEPENDED_ON = 1 << 4;

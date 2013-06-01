@@ -66,7 +66,7 @@ public abstract class ObjectGraph {
    * Returns an instance of {@code type}.
    *
    * @throws IllegalArgumentException if {@code type} is not one of this object
-   *     graph's {@link Module#injects injectable types}.
+   *     graph's {@link dagger.Module#injects injectable types}.
    */
   public abstract <T> T get(Class<T> type);
 
@@ -75,13 +75,13 @@ public abstract class ObjectGraph {
    * inherited from its supertypes.
    *
    * @throws IllegalArgumentException if the runtime type of {@code instance} is
-   *     not one of this object graph's {@link Module#injects injectable types}.
+   *     not one of this object graph's {@link dagger.Module#injects injectable types}.
    */
   public abstract <T> T inject(T instance);
 
   /**
    * Returns a new object graph that includes all of the objects in this graph,
-   * plus additional objects in the {@literal @}{@link Module}-annotated
+   * plus additional objects in the {@literal @}{@link dagger.Module}-annotated
    * modules. This graph is a subgraph of the returned graph.
    *
    * <p>The current graph is not modified by this operation: its objects and the
@@ -110,7 +110,7 @@ public abstract class ObjectGraph {
 
   /**
    * Returns a new dependency graph using the {@literal @}{@link
-   * Module}-annotated modules.
+   * dagger.Module}-annotated modules.
    *
    * <p>This <strong>does not</strong> inject any members. Most applications
    * should call {@link #injectStatics} to inject static members and {@link
