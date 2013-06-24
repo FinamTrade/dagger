@@ -7,15 +7,21 @@ import dagger.internal.gwt.ModuleProvider;
 
 public abstract class DaggerEntryPoint implements EntryPoint {
 
-  protected abstract void onLoad();
+    static public ObjectGraph objectGraph;
+
+    protected abstract void onLoad();
 
   @Override
   public final void onModuleLoad() {
     Object[] modules = GWT.<ModuleProvider>create(ModuleProvider.class).getModules(this);
-    ObjectGraph objectGraph = ObjectGraph.create(modules);
+    objectGraph = ObjectGraph.create(modules);
     objectGraph.injectStatics();
     objectGraph.inject(this);
 
     this.onLoad();
   }
+
+    public static ObjectGraph getObjectGraph() {
+        return objectGraph;
+    }
 }
