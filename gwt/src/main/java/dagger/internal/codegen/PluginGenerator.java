@@ -179,8 +179,10 @@ public class PluginGenerator extends IncrementalGenerator {
           }
 
           Type type = method.getGenericReturnType();
-          String key = Keys.get(type, method.getAnnotations(), method);
-          if (factory != null) {
+          String key;
+          if (factory == null) {
+            key = Keys.get(type, method.getAnnotations(), method);
+          } else {
             Class<?> factoryType = factory.value();
             key = Keys.get(factoryType, method.getAnnotations(), method);
           }
@@ -188,7 +190,7 @@ public class PluginGenerator extends IncrementalGenerator {
 
           switch(provides.type()) {
             case UNIQUE:
-              addTo.put(Keys.get(type, method.getAnnotations(), method), binding);
+              addTo.put(key, binding);
               break;
             case SET:
               key = Keys.getSetKey(type, method.getAnnotations(), method);
