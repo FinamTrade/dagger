@@ -23,7 +23,8 @@ import javax.inject.Provider;
  * Injects a value of a specific type.
  */
 public abstract class Binding<T> implements Provider<T>, MembersInjector<T> {
-  public static final Binding<Object> UNRESOLVED = new Binding<Object>(null, null, false, null) {
+  public static final Binding<Object> UNRESOLVED =
+      new Binding<Object>(null, null, null, false, null) {
     @Override public Object get() {
       throw new AssertionError("Unresolved binding should never be called to inject.");
     }
@@ -56,17 +57,21 @@ public abstract class Binding<T> implements Provider<T>, MembersInjector<T> {
   /** The key used to inject members of 'T', or null if this binding cannot inject members. */
   public final String membersKey;
 
+  public final String adapterKey;
+
   /** Bitfield of states like SINGLETON and LINKED. */
   private int bits;
 
   public final Object requiredBy;
 
-  protected Binding(String provideKey, String membersKey, boolean singleton, Object requiredBy) {
+  protected Binding(String provideKey, String membersKey, String adapterKey,
+      boolean singleton, Object requiredBy) {
     if (singleton && provideKey == null) {
       throw new IllegalArgumentException();
     }
     this.provideKey = provideKey;
     this.membersKey = membersKey;
+    this.adapterKey = adapterKey;
     this.requiredBy = requiredBy;
     this.bits = (singleton ? SINGLETON : 0);
   }

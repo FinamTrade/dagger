@@ -25,7 +25,7 @@ public class ReflectiveFactoryBinding<T> extends Binding<T> {
   public ReflectiveFactoryBinding(String provideKey, String membersKey,
                                   String targetKey, Class<T> factory, Type targetType,
                                   Method moduleMethod, Object moduleInstance) {
-    super(provideKey, membersKey, true, moduleMethod);
+    super(provideKey, membersKey, null, true, moduleMethod);
     this.moduleMethod = moduleMethod;
     moduleMethod.setAccessible(true);
     this.targetKey = targetKey;

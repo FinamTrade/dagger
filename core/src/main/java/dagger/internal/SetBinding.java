@@ -46,7 +46,7 @@ public final class SetBinding<T> extends Binding<Set<T>> {
   private final Set<Binding<?>> contributors = new LinkedHashSet<Binding<?>>();
 
   public SetBinding(String key, Object requiredBy) {
-    super(key, null, false, requiredBy);
+    super(key, null, null, false, requiredBy);
   }
 
   @Override public void attach(Linker linker) {

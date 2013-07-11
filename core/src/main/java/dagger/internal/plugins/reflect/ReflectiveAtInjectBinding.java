@@ -62,7 +62,7 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
       Class<?> type, Field[] fields, Constructor<T> constructor, int parameterCount,
       Class<?> supertype, String[] keys, Field[] assistedFields, Integer[] assistedParamIndexes,
       String[] assistedKeys) {
-    super(provideKey, membersKey, singleton, type);
+    super(provideKey, membersKey, "adapter/" + provideKey, singleton, type);
     this.constructor = constructor;
     this.fields = fields;
     this.supertype = supertype;

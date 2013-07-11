@@ -69,7 +69,7 @@ public final class SingletonBindingTest {
 
   private static class StringBinding extends Binding<String> {
     private StringBinding() {
-      super("dummy", "dummy", true, "dummy"); // 3rd arg true => singleton
+      super("dummy", "dummy", "dummy", true, "dummy"); // 3rd arg true => singleton
     }
 
   }

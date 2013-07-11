@@ -45,6 +45,11 @@ final class GeneratorKeys {
     return "members/" + CodeGen.rawTypeToString(type, '$');
   }
 
+
+  public static String rawAdapterKey(TypeMirror type) {
+    return "adapter/" + CodeGen.rawTypeToString(type, '$');
+  }
+
   /** Returns the provider key for {@code type}. */
   public static String get(TypeMirror type) {
     StringBuilder result = new StringBuilder();

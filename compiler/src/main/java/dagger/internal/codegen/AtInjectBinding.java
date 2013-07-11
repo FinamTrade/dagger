@@ -43,7 +43,8 @@ final class AtInjectBinding extends Binding<Object> {
 
   private AtInjectBinding(String provideKey, String membersKey,
       TypeElement type, List<String> keys, String supertypeKey) {
-    super(provideKey, membersKey, type.getAnnotation(Singleton.class) != null,
+    super(provideKey, membersKey, "adapter/" + provideKey,
+        type.getAnnotation(Singleton.class) != null,
         type.getQualifiedName().toString());
     this.type = type;
     this.keys = keys;

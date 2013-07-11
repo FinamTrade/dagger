@@ -285,7 +285,7 @@ public final class FullGraphProcessor extends AbstractProcessor {
     private final Binding<?>[] parameters;
 
     protected ProviderMethodBinding(String provideKey, ExecutableElement method, boolean library) {
-      super(provideKey, null, method.getAnnotation(Singleton.class) != null,
+      super(provideKey, null, null, method.getAnnotation(Singleton.class) != null,
           CodeGen.methodName(method));
       this.method = method;
       this.parameters = new Binding[method.getParameters().size()];

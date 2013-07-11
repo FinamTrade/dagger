@@ -111,7 +111,7 @@ public final class Linker {
           jitBinding.setDependedOn(binding.dependedOn());
           // Fail if the type of binding we got wasn't capable of what was requested.
           if (!key.equals(jitBinding.provideKey) && !key.equals(jitBinding.membersKey)
-              && !key.equals("adapter/" + jitBinding.provideKey)) {
+              && !key.equals(jitBinding.adapterKey)) {
             throw new IllegalStateException("Unable to create binding for " + key);
           }
           // Enqueue the JIT binding so its own dependencies can be linked.
@@ -249,10 +249,12 @@ public final class Linker {
     // and we also inject the members of that type.
     if (binding.provideKey != null) {
       putIfAbsent(bindings, binding.provideKey, binding);
-      putIfAbsent(bindings, "adapter/" + binding.provideKey, binding);
     }
     if (binding.membersKey != null) {
       putIfAbsent(bindings, binding.membersKey, binding);
+    }
+    if (binding.adapterKey != null) {
+      putIfAbsent(bindings, binding.adapterKey, binding);
     }
   }
 
@@ -291,7 +293,7 @@ public final class Linker {
     private volatile Object onlyInstance = UNINITIALIZED;
 
     private SingletonBinding(Binding<T> binding) {
-      super(binding.provideKey, binding.membersKey, true, binding.requiredBy);
+      super(binding.provideKey, binding.membersKey, binding.adapterKey, true, binding.requiredBy);
       this.binding = binding;
     }
 
@@ -390,7 +392,7 @@ public final class Linker {
     final boolean mustHaveInjections;
 
     private DeferredBinding(String deferredKey, Object requiredBy, boolean mustHaveInjections) {
-      super(null, null, false, requiredBy);
+      super(null, null, null, false, requiredBy);
       this.deferredKey = deferredKey;
       this.mustHaveInjections = mustHaveInjections;
     }

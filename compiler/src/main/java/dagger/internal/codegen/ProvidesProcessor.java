@@ -440,7 +440,7 @@ public final class ProvidesProcessor extends AbstractProcessor {
         || factoryProvider;
     String key = JavaWriter.stringLiteral(GeneratorKeys.get(providerMethod));
     String membersKey = null;
-    writer.emitStatement("super(%s, %s, %s, %s)",
+    writer.emitStatement("super(%s, %s, null, %s, %s)",
         key, membersKey, (singleton ? "IS_SINGLETON" : "NOT_SINGLETON"),
         JavaWriter.stringLiteral(moduleType + "." + methodName + "()"));
     writer.emitStatement("this.module = module");

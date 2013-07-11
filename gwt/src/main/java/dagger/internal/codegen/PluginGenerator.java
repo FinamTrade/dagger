@@ -226,7 +226,7 @@ public class PluginGenerator extends IncrementalGenerator {
     private final Binding<?>[] parameters;
 
     protected ProviderMethodBinding(String provideKey, Method method) {
-      super(provideKey, null, method.getAnnotation(Singleton.class) != null,
+      super(provideKey, null, null, method.getAnnotation(Singleton.class) != null,
           method.getName());
       this.method = method;
       this.parameters = new Binding[method.getParameterTypes().length];

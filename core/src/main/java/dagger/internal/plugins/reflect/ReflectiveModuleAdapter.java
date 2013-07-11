@@ -174,7 +174,7 @@ final class ReflectiveModuleAdapter extends ModuleAdapter<Object> {
     private final Object instance;
 
     public ProviderMethodBinding(Method method, String key, Object instance, boolean library) {
-      super(key, null, method.isAnnotationPresent(Singleton.class),
+      super(key, null, null, method.isAnnotationPresent(Singleton.class),
           moduleClass.getName() + "." + method.getName() + "()");
       this.method = method;
       this.instance = instance;
