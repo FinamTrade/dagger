@@ -191,6 +191,11 @@ final class ReflectiveAtInjectBinding<T> extends Binding<T> {
         if (!field.isAnnotationPresent(Inject.class) || Modifier.isStatic(field.getModifiers())) {
           continue;
         }
+
+        if (!field.isAnnotationPresent(Assisted.class) && c != type) {
+          continue;
+        }
+
         if ((field.getModifiers() & Modifier.PRIVATE) != 0) {
           throw new IllegalStateException("Can't inject private field: " + field);
         }
