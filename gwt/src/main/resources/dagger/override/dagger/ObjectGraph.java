@@ -250,18 +250,19 @@ public abstract class ObjectGraph {
     }
 
     @Override public <T> T inject(T instance) {
-      Class<?> type = instance.getClass();
+      Class<?> instanceType = instance.getClass();
 
+      Class<?> type = instanceType;
       Class<?> moduleClass;
       String membersKey;
       do {
-        membersKey = Keys.getMembersKey(type.getClass());
+        membersKey = Keys.getMembersKey(type);
         moduleClass = getModuleOfInjectableType(membersKey);
         type = type.getSuperclass();
-      } while (moduleClass  != null && type != Object.class);
+      } while (moduleClass == null && type != Object.class);
 
       if (moduleClass == null) {
-        throw new IllegalArgumentException("Not found injects for " + type
+        throw new IllegalArgumentException("Not found injects for " + instanceType
             + ". You must explicitly add it to the 'injects' option in one of your modules.");
       }
 

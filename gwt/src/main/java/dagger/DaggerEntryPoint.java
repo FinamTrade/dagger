@@ -7,9 +7,9 @@ import dagger.internal.gwt.ModuleProvider;
 
 public abstract class DaggerEntryPoint implements EntryPoint {
 
-    static public ObjectGraph objectGraph;
+  private ObjectGraph objectGraph;
 
-    protected abstract void onLoad();
+  protected abstract void onLoad();
 
   @Override
   public final void onModuleLoad() {
@@ -21,7 +21,7 @@ public abstract class DaggerEntryPoint implements EntryPoint {
     this.onLoad();
   }
 
-    public static ObjectGraph getObjectGraph() {
-        return objectGraph;
-    }
+  public ObjectGraph getObjectGraph() {
+    return objectGraph;
+  }
 }
