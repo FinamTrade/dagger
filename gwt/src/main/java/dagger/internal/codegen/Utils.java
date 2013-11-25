@@ -3,7 +3,6 @@ package dagger.internal.codegen;
 import com.google.gwt.core.ext.GeneratorContext;
 import dagger.Module;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -53,25 +52,16 @@ public class Utils {
       throws Exception {
 
     Set<Class<?>> allModules = new HashSet<Class<?>>();
-    Set<Class<?>> processed = new HashSet<Class<?>>();
     allModules.add(rootModuleClass);
 
-    while (allModules.size() > processed.size()) {
-      for (Class<?> moduleClass : allModules) {
-        if (processed.contains(moduleClass)) {
-          continue;
-        }
+    Module annotation = rootModuleClass.getAnnotation(Module.class);
+    if (annotation == null) {
+      throw new RuntimeException("Class " + rootModuleClass.getCanonicalName()
+          + " has no @Module annotation.");
+    }
 
-        Module annotation = moduleClass.getAnnotation(Module.class);
-
-        if (annotation == null) {
-          throw new RuntimeException("Class " + moduleClass.getCanonicalName()
-              + " has no @Module annotation.");
-        }
-
-        allModules.addAll(Arrays.asList(annotation.includes()));
-        processed.add(moduleClass);
-      }
+    for (Class<?> moduleClass : annotation.includes()) {
+      allModules.addAll(findAllModules(moduleClass));
     }
 
     return allModules;

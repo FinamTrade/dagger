@@ -21,7 +21,7 @@
     <groupId>ru.finam.dagger</groupId>
     <artifactId>dagger-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.6</version>
+    <version>1.2.7</version>
     <name>Dagger (Parent)</name>
     <description>A JSR-330 dependency injector for Android and Java.</description>
     <url>https://github.com/square/dagger</url>
@@ -29,8 +29,8 @@
     <modules>
         <module>compiler</module>
         <module>core</module>
-        <module>examples</module>
         <module>gwt</module>
+        <module>examples</module>
     </modules>
 
     <properties>
