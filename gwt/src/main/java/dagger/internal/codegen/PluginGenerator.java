@@ -95,8 +95,8 @@ public class PluginGenerator extends IncrementalGenerator {
       sw.println("public %s getStaticInjection(Class<?> injectedClass) {",
           StaticInjection.class.getName());
       sw.indent();
-      sw.println("String className = injectedClass.getName();");
       // TODO: static injections
+      // sw.println("String className = injectedClass.getName();");
       // printInstantiations(staticInjectionNames, STATIC_INJECTION_SUFFIX, null, sw);
       sw.println("return null;");
       sw.outdent();
@@ -116,13 +116,7 @@ public class PluginGenerator extends IncrementalGenerator {
   private void printInstantiations(
       List<String> classNames, String suffix, String castClassName, SourceWriter sw) {
 
-    boolean first = true;
     for (String className : classNames) {
-      if (first) {
-        first = false;
-      } else {
-        sw.print(" else ");
-      }
       sw.println("if (className.equals(\"%s\")) {", className);
       sw.indent();
       if (castClassName != null) {
@@ -131,10 +125,7 @@ public class PluginGenerator extends IncrementalGenerator {
         sw.println("return new %s();", className + suffix);
       }
       sw.outdent();
-      sw.print("}");
-    }
-    if (!first) {
-      sw.println();
+      sw.println("}");
     }
     sw.println("return null;");
   }

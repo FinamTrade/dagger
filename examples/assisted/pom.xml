@@ -7,7 +7,7 @@
   <parent>
     <groupId>ru.finam.dagger.example</groupId>
     <artifactId>dagger-example-parent</artifactId>
-    <version>1.2.7</version>
+    <version>1.2.9</version>
   </parent>
 
   <artifactId>assisted-dagger-example</artifactId>
