@@ -1,6 +1,7 @@
 package dagger.internal.codegen;
 
 
+import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.IncrementalGenerator;
 import com.google.gwt.core.ext.RebindMode;
@@ -9,7 +10,6 @@ import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
-import dagger.DaggerEntryPoint;
 import dagger.Module;
 import dagger.internal.gwt.ModuleProvider;
 
@@ -62,7 +62,7 @@ public class ModuleProviderGenerator extends IncrementalGenerator {
         Class<?>[] injects = moduleAnnotation.injects();
 
         for (Class<?> inject : injects) {
-          if (DaggerEntryPoint.class.isAssignableFrom(inject)) {
+          if (EntryPoint.class.isAssignableFrom(inject)) {
             List<String> modules = modulesByEntryPoint.get(inject.getName());
 
             if (modules == null) {
@@ -75,7 +75,7 @@ public class ModuleProviderGenerator extends IncrementalGenerator {
       }
 
       sw.println("@Override");
-      sw.println("public Object[] getModules(%s entryPoint) {", DaggerEntryPoint.class.getName());
+      sw.println("public Object[] getModules(%s entryPoint) {", EntryPoint.class.getName());
       sw.indent();
 
       boolean first = true;

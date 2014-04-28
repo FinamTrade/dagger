@@ -21,7 +21,7 @@
     <groupId>ru.finam.dagger</groupId>
     <artifactId>dagger-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.9</version>
+    <version>1.2.10</version>
     <name>Dagger (Parent)</name>
     <description>A JSR-330 dependency injector for Android and Java.</description>
     <url>https://github.com/square/dagger</url>

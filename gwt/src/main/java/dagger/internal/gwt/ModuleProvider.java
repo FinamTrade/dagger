@@ -1,7 +1,7 @@
 package dagger.internal.gwt;
 
-import dagger.DaggerEntryPoint;
+import com.google.gwt.core.client.EntryPoint;
 
 public interface ModuleProvider {
-  Object[] getModules(DaggerEntryPoint entryPoint);
+  Object[] getModules(EntryPoint entryPoint);
 }
