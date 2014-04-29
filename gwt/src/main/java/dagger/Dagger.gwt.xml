@@ -13,8 +13,4 @@
   <generate-with class="dagger.internal.codegen.PluginGenerator">
     <when-type-assignable class="dagger.internal.Plugin" />
   </generate-with>
-
-  <generate-with class="dagger.internal.codegen.ModuleProviderGenerator">
-    <when-type-assignable class="dagger.internal.gwt.ModuleProvider" />
-  </generate-with>
 </module>

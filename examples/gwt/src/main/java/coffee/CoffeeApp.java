@@ -16,7 +16,7 @@ public class CoffeeApp implements EntryPoint {
 
   @Override
   public void onModuleLoad() {
-    EntryPointInjector.inject(this);
+    EntryPointInjector.inject(this, new DripCoffeeModule());
 
     Button btn = Button.wrap(Document.get().getElementById("coffeeMaker"));
 
